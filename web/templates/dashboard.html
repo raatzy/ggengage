@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ business_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Post Dashboard</h1>
+  <p class="subtitle">Review emails that triggered the <code>[WGPOST]</code> automation.</p>
+</div>
+
+<!-- ── PENDING ─────────────────────────────────────────────────────────── -->
+<section class="section">
+  <h2><span class="badge badge-pending">{{ pending|length }}</span> Pending Approval</h2>
+
+  {% if pending %}
+  <div class="post-grid">
+    {% for post in pending %}
+    <div class="post-card status-pending">
+      {% if post['image_path'] %}
+      <a href="{{ url_for('post_detail', post_id=post['id']) }}">
+        <img class="card-thumb"
+             src="{{ url_for('serve_image', filename=post['image_path'].split('/')[-1]) }}"
+             alt="Post image">
+      </a>
+      {% endif %}
+      <div class="card-body">
+        <p class="card-subject">{{ post['email_subject'] }}</p>
+        <p class="card-from">From: {{ post['email_from'] }}</p>
+        <p class="card-preview">{{ post['generated_text'][:140] }}…</p>
+        <p class="card-tags">{{ post['hashtags'][:80] }}</p>
+        <div class="card-actions">
+          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View / Edit</a>
+          <form method="post" action="{{ url_for('approve', post_id=post['id']) }}" style="display:inline">
+            <button class="btn btn-approve" type="submit">✓ Approve</button>
+          </form>
+          <form method="post" action="{{ url_for('reject', post_id=post['id']) }}" style="display:inline">
+            <button class="btn btn-reject" type="submit">✗ Reject</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-state">No posts pending — inbox is clear.</p>
+  {% endif %}
+</section>
+
+<!-- ── APPROVED ───────────────────────────────────────────────────────── -->
+<section class="section">
+  <h2><span class="badge badge-approved">{{ approved|length }}</span> Approved</h2>
+
+  {% if approved %}
+  <div class="post-grid">
+    {% for post in approved %}
+    <div class="post-card status-approved">
+      {% if post['image_path'] %}
+      <a href="{{ url_for('post_detail', post_id=post['id']) }}">
+        <img class="card-thumb"
+             src="{{ url_for('serve_image', filename=post['image_path'].split('/')[-1]) }}"
+             alt="Post image">
+      </a>
+      {% endif %}
+      <div class="card-body">
+        <p class="card-subject">{{ post['email_subject'] }}</p>
+        <p class="card-preview">{{ post['generated_text'][:140] }}…</p>
+        <p class="card-approved-at">Approved {{ post['approved_at'] }}</p>
+        <div class="card-actions">
+          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View</a>
+          <button class="btn btn-post" disabled title="Coming soon — social posting not yet wired up">
+            📤 Post to Social (coming soon)
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-state">No approved posts yet.</p>
+  {% endif %}
+</section>
+
+<!-- ── REJECTED ───────────────────────────────────────────────────────── -->
+{% if rejected %}
+<section class="section section-collapsed">
+  <h2><span class="badge badge-rejected">{{ rejected|length }}</span> Rejected</h2>
+  <div class="post-grid">
+    {% for post in rejected %}
+    <div class="post-card status-rejected">
+      <div class="card-body">
+        <p class="card-subject">{{ post['email_subject'] }}</p>
+        <p class="card-from">From: {{ post['email_from'] }}</p>
+        <div class="card-actions">
+          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View</a>
+          <form method="post" action="{{ url_for('approve', post_id=post['id']) }}" style="display:inline">
+            <button class="btn btn-approve" type="submit">↩ Re-approve</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

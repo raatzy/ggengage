@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ business_name }} — Social Post Manager{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="gecko">🦎</span>
+        <span class="biz-name">{{ business_name }}</span>
+        <span class="sub">Social Post Manager</span>
+      </div>
+      <nav>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>{{ business_name }} &mdash; Email → Social Post Automation</p>
+  </footer>
+</body>
+</html>
