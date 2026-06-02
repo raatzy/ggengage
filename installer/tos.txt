@@ -1,0 +1,147 @@
+GG ENGAGE PHOTO PROCESSOR
+TERMS OF SERVICE AND PRIVACY STATEMENT
+Version 1.0  |  Effective: 1 June 2025
+================================================================================
+
+PLEASE READ THESE TERMS CAREFULLY BEFORE INSTALLING OR USING THIS SOFTWARE.
+BY CLICKING "I ACCEPT" OR BY INSTALLING THE SOFTWARE, YOU AGREE TO BE BOUND
+BY THESE TERMS.  IF YOU DO NOT AGREE, DO NOT INSTALL OR USE THE SOFTWARE.
+
+
+PART A — TERMS OF SERVICE
+================================================================================
+
+1. DEFINITIONS
+   "Software" means GG Engage Photo Processor and all associated files
+   installed on your computer.
+   "Licensor" means GG Engage, operated by the publisher of this Software.
+   "You" means the individual who installs or uses the Software.
+
+2. GRANT OF LICENCE
+   The Licensor grants you a non-exclusive, non-transferable, revocable
+   licence to install and use the Software on one personal computer that you
+   own or control, subject to these Terms.
+
+   Free Trial.  You may use the Software to process up to twenty (20) photos
+   at no charge.
+
+   Full Licence.  Upon payment of the one-time licence fee of AUD $10.00
+   (Australian dollars), you receive a licence key that unlocks unlimited use
+   on the computer on which it is activated.
+
+3. RESTRICTIONS
+   You must not:
+   (a) copy, redistribute, sell, rent, lease or sublicense the Software or
+       any licence key;
+   (b) reverse engineer, decompile, disassemble or attempt to derive the
+       source code of the Software, except to the extent permitted by
+       applicable law;
+   (c) remove or alter any proprietary notices, labels or marks on the
+       Software;
+   (d) use the Software for any unlawful purpose.
+
+4. INTELLECTUAL PROPERTY
+   The Software, including all code, design elements, and documentation,
+   is the exclusive property of the Licensor and is protected by Australian
+   copyright law and international treaties.  These Terms do not transfer
+   any ownership rights to you.
+
+5. PAYMENT AND LICENCE KEYS
+   Licence fees are processed outside this Software (for example, by bank
+   transfer or payment service nominated by the Licensor).  Once payment is
+   confirmed, the Licensor will provide a unique 16-character licence key
+   by email.  Licence keys are personal to you and must not be shared.
+
+6. FREE AND OPEN-SOURCE COMPONENTS
+   The Software includes open-source libraries (Pillow, piexif, geopy) that
+   are distributed under their respective licences (HPND, MIT, LGPL-2.1).
+   Your use of those components remains subject to their original licences.
+
+7. DISCLAIMER OF WARRANTIES
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.  THE LICENSOR
+   DOES NOT WARRANT THAT THE SOFTWARE WILL BE ERROR-FREE OR UNINTERRUPTED.
+
+8. LIMITATION OF LIABILITY
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR SHALL NOT BE LIABLE
+   FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES
+   ARISING OUT OF YOUR USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF
+   ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.  IN NO EVENT SHALL THE
+   LICENSOR'S TOTAL LIABILITY EXCEED THE AMOUNT YOU PAID FOR THE SOFTWARE.
+
+9. TERMINATION
+   This licence is effective until terminated.  It terminates automatically
+   if you breach any provision of these Terms.  Upon termination you must
+   delete all copies of the Software.
+
+10. GOVERNING LAW
+    These Terms are governed by the laws of Queensland, Australia.  Any
+    dispute shall be subject to the exclusive jurisdiction of the courts of
+    Queensland.
+
+11. CONTACT
+    For support, licence key requests, or other enquiries:
+    Email:  support@ggengage.com.au
+    Web:    https://ggengage.com.au
+
+
+PART B — PRIVACY STATEMENT
+================================================================================
+
+GG Engage is committed to protecting your privacy.  This Privacy Statement
+explains how the Software handles information in accordance with the
+Australian Privacy Act 1988 (Cth) and the Australian Privacy Principles.
+
+1. NO DATA COLLECTED
+   This Software does NOT collect, transmit, upload, or share any personal
+   data, photos, metadata, or usage information with the Licensor, any third
+   party, or any remote server.
+
+   All processing occurs entirely on your local computer.
+
+2. LOCAL STORAGE ONLY
+   The Software stores the following data ONLY on your own computer, in the
+   folder  %APPDATA%\GGEngagePhotoProcessor\:
+
+   - The number of photos you have processed (for the free-trial counter).
+   - Your licence key (if you have purchased one), stored in a plain
+     JSON file accessible only to your Windows user account.
+
+   This data never leaves your computer.
+
+3. THIRD-PARTY REVERSE GEOCODING (NOMINATIM)
+   When the Software processes a geotagged photo, it sends the GPS
+   coordinates (latitude and longitude only) to the Nominatim geocoding
+   service operated by OpenStreetMap Foundation (openstreetmap.org) in order
+   to look up the place name for that location.
+
+   - No photo content, personal details, or identifying information is sent.
+   - Only the GPS coordinates extracted from the photo's EXIF data are
+     transmitted.
+   - Nominatim's usage policy and privacy information can be found at
+     https://operations.osmfoundation.org/policies/nominatim/
+   - Requests are rate-limited to one per second in accordance with that
+     policy.
+   - If you do not wish GPS coordinates to be sent to Nominatim, do not
+     process geotagged photos with this Software.
+
+4. NO ANALYTICS, ADVERTISING, OR TRACKING
+   The Software contains no analytics SDK, advertising SDK, crash-reporting
+   service, or any form of tracking technology.
+
+5. CHILDREN
+   The Software is not directed at children under 13.  We do not knowingly
+   collect information from children.
+
+6. CHANGES TO THIS STATEMENT
+   Any updates to this Privacy Statement will be included in future versions
+   of the Software and announced on our website.
+
+7. CONTACT
+   If you have questions about this Privacy Statement:
+   Email:  support@ggengage.com.au
+   Web:    https://ggengage.com.au
+
+================================================================================
+END OF TERMS OF SERVICE AND PRIVACY STATEMENT
