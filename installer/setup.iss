@@ -1,6 +1,6 @@
 ; GG Engage Photo Processor — Inno Setup 6 Script
 ; Requirements: Inno Setup 6.3+  https://jrsoftware.org/isdl.php
-; Run:  ISCC.exe setup.iss  (from this directory)
+; Run:  ISCC.exe setup.iss  (from the installer\ directory)
 ; Output: installer\Output\GGEngagePhotoProcessor_Setup_v1.0.0.exe
 
 #define AppName      "GG Engage Photo Processor"
@@ -12,7 +12,7 @@
 
 ; ── Setup metadata ────────────────────────────────────────────────────────────
 [Setup]
-; Unique ID — do NOT change after first release (used for upgrades / uninstall)
+; Do NOT change AppId after first release — used for upgrades and uninstall
 AppId={{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}
 AppName={#AppName}
 AppVersion={#AppVersion}
@@ -22,12 +22,12 @@ AppPublisherURL={#AppURL}
 AppSupportURL=mailto:support@ggengage.com.au
 AppUpdatesURL={#AppURL}
 
-; Install into user's local app data so no admin rights are needed
+; Install into user's local app data — no UAC prompt needed
 DefaultDirName={localappdata}\GGEngagePhotoProcessor
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 
-; Show the ToS + Privacy statement page in the wizard
+; ToS + Privacy Statement shown before the user can proceed
 LicenseFile=tos.txt
 
 ; Output
@@ -41,15 +41,14 @@ SolidCompression=yes
 ; Appearance
 WizardStyle=modern
 WizardSizePercent=110
-SetupIconFile=
 
-; Windows 10 (build 17763) or later
+; Windows 10 (1809 / build 17763) or later
 MinVersion=10.0.17763
 
-; No UAC prompt — installs to user profile only
+; No UAC elevation required
 PrivilegesRequired=lowest
 
-; Uninstall
+; Uninstall display
 UninstallDisplayName={#AppName}
 UninstallDisplayIcon={app}\{#AppExe}
 
@@ -57,16 +56,15 @@ UninstallDisplayIcon={app}\{#AppExe}
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
-; ── Optional tasks (shown on the Extra Tasks wizard page) ────────────────────
+; ── Optional install tasks ────────────────────────────────────────────────────
 [Tasks]
 Name: "desktopicon"; \
   Description: "Create a &desktop shortcut for {#AppName}"; \
   GroupDescription: "Additional shortcuts:"; \
   Flags: unchecked
 
-; ── Files to install ─────────────────────────────────────────────────────────
+; ── Files ─────────────────────────────────────────────────────────────────────
 [Files]
-; All PyInstaller output (exe + bundled libraries)
 Source: "{#SourceDir}\*"; \
   DestDir: "{app}"; \
   Flags: ignoreversion recursesubdirs createallsubdirs
@@ -78,26 +76,16 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\{#AppName}";   Filename: "{app}\{#AppExe}"; \
   Tasks: desktopicon
 
-; ── Run after install ────────────────────────────────────────────────────────
+; ── Launch after install ──────────────────────────────────────────────────────
 [Run]
 Filename: "{app}\{#AppExe}"; \
   Description: "Launch {#AppName} now"; \
   Flags: nowait postinstall skipifsilent
 
-; ── Custom wizard pages (informational) ──────────────────────────────────────
-[Code]
-
-{ Show a brief "About licensing" message after the license page is accepted }
-procedure CurPageChanged(CurPageID: Integer);
-begin
-  if CurPageID = wpSelectDir then
-  begin
-    WizardForm.DirEdit.Text := ExpandConstant('{localappdata}\GGEngagePhotoProcessor');
-  end;
-end;
-
-{ Warn the user if they try to install over an existing version }
-function InitializeSetup(): Boolean;
-begin
-  Result := True;
-end;
+; ── Uninstall ─────────────────────────────────────────────────────────────────
+; NOTE: The three hidden license/trial storage locations (registry key, jump-list
+; file, Explorer cache file) are intentionally NOT listed here. They must survive
+; uninstall so that reinstalling cannot reset the free trial. The only thing
+; removed is the application files themselves.
+[UninstallDelete]
+; Nothing extra to remove — app files in {app} are removed automatically

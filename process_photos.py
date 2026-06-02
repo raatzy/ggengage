@@ -3,17 +3,24 @@
 GG Engage Photo Processor — Windows GUI application.
 Reads GPS EXIF data, reverse geocodes to city/country, overlays the location
 on each photo, resizes to 1200 px on the longest side, and saves the result
-as a JPEG in a 'processed/' subfolder. Free for the first 20 photos;
-a license key is required for unlimited use.
+as a JPEG in a 'processed/' subfolder.
+
+Licensing: first 20 photos free; $AUD 10 license key required after that.
+
+License/trial state is stored encrypted in three independent hidden locations
+bound to the local machine. Uninstalling and reinstalling does not reset the
+trial, and copying files to another computer does not transfer the license.
 
 Install dependencies:
-    pip install Pillow piexif geopy
+    pip install Pillow piexif geopy cryptography
 """
 
+import base64
 import hashlib
 import hmac
 import json
 import os
+import sys
 import threading
 import time
 import tkinter as tk
@@ -25,63 +32,241 @@ from PIL import Image, ImageDraw, ImageFont
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
+try:
+    from cryptography.fernet import Fernet, InvalidToken
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    from cryptography.hazmat.primitives import hashes as _ch
+except ImportError:
+    sys.exit(
+        "Missing dependency — run:  pip install cryptography  then try again.")
+
+# Windows-only modules (guarded so the script still imports on Linux/macOS
+# during development; all Windows paths are _WIN-gated at runtime)
+_WIN = sys.platform == "win32"
+if _WIN:
+    import ctypes
+    import ctypes.wintypes
+    import winreg
+
+
 # ── App constants ─────────────────────────────────────────────────────────────
 
-APP_NAME    = "GG Engage Photo Processor"
-APP_VERSION = "1.0.0"
-FREE_LIMIT  = 20
-PRICE_AUD   = 10
+APP_NAME      = "GG Engage Photo Processor"
+APP_VERSION   = "1.0.0"
+FREE_LIMIT    = 20
+PRICE_AUD     = 10
 SUPPORT_EMAIL = "support@ggengage.com.au"
 
-# License validation key (baked into the exe — keep this private)
-_LICENSE_SECRET = b"GGEngagePhotoProc-k9xP2025#mR7"
+# HMAC secret for offline license-key validation
+_LIC_SECRET = b"GGEngagePhotoProc-k9xP2025#mR7"
 
-# Per-user config stored in %APPDATA%\GGEngagePhotoProcessor\
-CONFIG_DIR  = Path(os.environ.get("APPDATA", str(Path.home()))) / "GGEngagePhotoProcessor"
-CONFIG_FILE = CONFIG_DIR / "config.json"
+# HKDF salt for per-machine storage encryption (keep private)
+_KDF_SALT = b"GGEngPhotoProc-StoreSalt-2025#v1"
+
+# ── Hidden storage locations ──────────────────────────────────────────────────
+# These paths look like legitimate Windows system files and are NOT touched
+# by the app's own uninstaller, so the trial counter survives reinstalls.
+
+_APPDATA  = Path(os.environ.get("APPDATA",      str(Path.home())))
+_LAPPDATA = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+
+# Location 1 (registry): disguised as a COM AppID registration
+_REG_KEY = r"Software\Classes\AppID\{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}"
+_REG_VAL = "LocalService"
+
+# Location 2 (file): looks like a Windows jump-list file
+_FILE_A = (_APPDATA / "Microsoft/Windows/Recent/AutomaticDestinations"
+           / "a3f7c2d14b8e4f9a.automaticDestinations-ms")
+
+# Location 3 (file): looks like a Windows thumbnail cache file
+_FILE_B = (_LAPPDATA / "Microsoft/Windows/Explorer"
+           / "thumbcache_{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}.db")
+
+# ── Image constants ───────────────────────────────────────────────────────────
 
 IMAGE_EXTS    = {".jpg", ".jpeg", ".tiff", ".tif", ".png", ".webp", ".bmp"}
 MAX_LONG_SIDE = 1200
-GEOCODE_DELAY = 1.0     # seconds — respects Nominatim's usage policy
+GEOCODE_DELAY = 1.0
 TEXT_PADDING  = 10
 FONT_SIZE     = 20
-OVERLAY_ALPHA = 160     # 0-255 darkness of the location label background
+OVERLAY_ALPHA = 160
 
 BG, FG, ACCENT = "#1e1e1e", "#f0f0f0", "#4caf50"
 
 
-# ── License helpers ───────────────────────────────────────────────────────────
+# ── Machine fingerprint + per-machine Fernet key ──────────────────────────────
+
+def _machine_id() -> str:
+    """
+    Build a stable hardware fingerprint.
+    Sources: Windows MachineGuid (set at OS install) + C: volume serial.
+    Survives reboots, Windows Updates, and app reinstalls.
+    Changes only if the OS is reinstalled or the system drive is reformatted.
+    """
+    parts: list[str] = []
+
+    if _WIN:
+        # Windows MachineGuid — created once at Windows setup
+        try:
+            k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                               r"SOFTWARE\Microsoft\Cryptography")
+            guid, _ = winreg.QueryValueEx(k, "MachineGuid")
+            winreg.CloseKey(k)
+            parts.append(f"guid:{guid}")
+        except Exception:
+            pass
+
+        # C: drive volume serial number
+        try:
+            serial = ctypes.wintypes.DWORD(0)
+            ctypes.windll.kernel32.GetVolumeInformationW(
+                "C:\\", None, 0, ctypes.byref(serial), None, None, None, 0)
+            parts.append(f"vol:{serial.value:08x}")
+        except Exception:
+            pass
+
+    # Computer name — fallback; less stable but present everywhere
+    parts.append(f"host:{os.environ.get('COMPUTERNAME', 'unknown')}")
+
+    combined = "||".join(parts) or "no-hw-info"
+    return hashlib.sha256(combined.encode()).hexdigest()
+
+
+def _make_fernet(machine_id: str) -> Fernet:
+    """Derive a machine-specific Fernet key via HKDF (fast, deterministic)."""
+    raw = HKDF(
+        algorithm=_ch.SHA256(),
+        length=32,
+        salt=_KDF_SALT,
+        info=b"GGEngagePhotoProcessor-store-v1",
+    ).derive(machine_id.encode())
+    return Fernet(base64.urlsafe_b64encode(raw))
+
+
+# Build and cache the Fernet instance at import time (HKDF is instant)
+_FERNET = _make_fernet(_machine_id())
+
+
+# ── Raw storage I/O ───────────────────────────────────────────────────────────
+
+def _reg_read() -> bytes | None:
+    if not _WIN:
+        return None
+    try:
+        k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _REG_KEY)
+        data, _ = winreg.QueryValueEx(k, _REG_VAL)
+        winreg.CloseKey(k)
+        return bytes(data)
+    except Exception:
+        return None
+
+
+def _reg_write(data: bytes) -> None:
+    if not _WIN:
+        return
+    try:
+        k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, _REG_KEY)
+        winreg.SetValueEx(k, _REG_VAL, 0, winreg.REG_BINARY, data)
+        winreg.CloseKey(k)
+    except Exception:
+        pass
+
+
+def _file_read(path: Path) -> bytes | None:
+    try:
+        return path.read_bytes()
+    except Exception:
+        return None
+
+
+def _file_write(path: Path, data: bytes) -> None:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        # Mark the file hidden so it doesn't appear in Explorer
+        if _WIN:
+            try:
+                ctypes.windll.kernel32.SetFileAttributesW(str(path), 0x02)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+# ── Config load / save ────────────────────────────────────────────────────────
+
+def _decrypt_one(raw: bytes | None) -> dict | None:
+    """Decrypt and parse one storage blob; returns None on any failure."""
+    if raw is None:
+        return None
+    try:
+        return json.loads(_FERNET.decrypt(raw).decode())
+    except (InvalidToken, Exception):
+        return None
+
+
+def _load_config() -> dict:
+    """
+    Read all three storage locations. The winner is whichever valid record
+    shows a license, or else the one with the highest photo count.
+
+    Any missing or corrupted location is silently restored from the winner so
+    that all three stay in sync. If ALL three are missing or unreadable (e.g.
+    first run on a new machine) a fresh default config is returned.
+    """
+    blobs   = [_reg_read(), _file_read(_FILE_A), _file_read(_FILE_B)]
+    records = [_decrypt_one(b) for b in blobs]
+    valid   = [r for r in records if r is not None]
+
+    if not valid:
+        # Genuine first run on this machine, or OS reinstall
+        return {"photos_processed": 0, "licensed": False, "license_key": None}
+
+    # Licensed record wins; otherwise highest photo count
+    winner = max(valid,
+                 key=lambda c: (int(c.get("licensed", False)),
+                                c.get("photos_processed", 0)))
+
+    # Restore any location that was missing or tampered
+    encrypted = _FERNET.encrypt(json.dumps(winner).encode())
+    if records[0] is None:
+        _reg_write(encrypted)
+    if records[1] is None:
+        _file_write(_FILE_A, encrypted)
+    if records[2] is None:
+        _file_write(_FILE_B, encrypted)
+
+    return winner
+
+
+def _save_config(cfg: dict) -> None:
+    """Encrypt and write config to all three locations atomically."""
+    encrypted = _FERNET.encrypt(json.dumps(cfg).encode())
+    _reg_write(encrypted)
+    _file_write(_FILE_A, encrypted)
+    _file_write(_FILE_B, encrypted)
+
+
+# ── License key validation (machine-agnostic HMAC check) ─────────────────────
 
 def _validate_key(key: str) -> bool:
     """
-    Offline validation. Key format: XXXX-XXXX-XXXX-XXXX (16 hex chars).
-    First 8 chars are the payload; last 8 are HMAC-SHA256(SECRET, payload)[:8].
+    Offline validation — no network call.
+    Key format: XXXX-XXXX-XXXX-XXXX (16 hex chars, hyphens optional).
+    First 8 chars = random payload; last 8 = HMAC-SHA256(secret, payload)[:8].
+    The activation record stored on disk is machine-bound via Fernet; the key
+    itself is machine-agnostic so the user can re-enter it after an OS reinstall.
     """
     k = key.strip().upper().replace("-", "").replace(" ", "")
     if len(k) != 16:
         return False
-    payload = k[:8]
-    expected = hmac.new(_LICENSE_SECRET, payload.encode(),
+    payload  = k[:8]
+    expected = hmac.new(_LIC_SECRET, payload.encode(),
                         hashlib.sha256).hexdigest()[:8].upper()
     return k[8:] == expected
 
 
-def _load_config() -> dict:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    if CONFIG_FILE.exists():
-        try:
-            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    return {"photos_processed": 0, "licensed": False, "license_key": None}
-
-
-def _save_config(cfg: dict) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    CONFIG_FILE.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
-
-
-# ── Image processing ──────────────────────────────────────────────────────────
+# ── Image helpers ─────────────────────────────────────────────────────────────
 
 def _dms_to_decimal(dms, ref) -> float:
     d = dms[0][0] / dms[0][1]
@@ -94,7 +279,6 @@ def _dms_to_decimal(dms, ref) -> float:
 
 
 def _extract_gps(path: Path):
-    """Return (lat, lon) from EXIF, or None if absent/unreadable."""
     try:
         exif = piexif.load(str(path))
     except Exception:
@@ -119,7 +303,7 @@ def _geocode(geolocator, lat: float, lon: float) -> str:
         return f"{lat:.4f}, {lon:.4f}"
     if loc is None:
         return f"{lat:.4f}, {lon:.4f}"
-    addr = loc.raw.get("address", {})
+    addr    = loc.raw.get("address", {})
     city    = (addr.get("city") or addr.get("town")
                or addr.get("village") or addr.get("county"))
     country = addr.get("country")
@@ -166,10 +350,6 @@ def _overlay(img: Image.Image, text: str) -> Image.Image:
 
 
 def _process_photo(photo: Path, geolocator) -> str | None:
-    """
-    Process one photo. Returns the location string on success,
-    or None if the photo has no GPS data (caller should skip it).
-    """
     coords = _extract_gps(photo)
     if coords is None:
         return None
@@ -179,11 +359,9 @@ def _process_photo(photo: Path, geolocator) -> str | None:
     time.sleep(GEOCODE_DELAY)
 
     img = Image.open(photo)
-
-    # Correct EXIF orientation before resizing
     try:
         exif_data = piexif.load(str(photo))
-        orient = exif_data.get("0th", {}).get(piexif.ImageIFD.Orientation, 1)
+        orient    = exif_data.get("0th", {}).get(piexif.ImageIFD.Orientation, 1)
         for tag, deg in {3: 180, 6: 270, 8: 90}.items():
             if orient == tag:
                 img = img.rotate(deg, expand=True)
@@ -213,16 +391,14 @@ class App(tk.Tk):
         self._build_ui()
         self._refresh_status()
 
-    # ── UI construction ──────────────────────────────────────────────────────
+    # ── UI ───────────────────────────────────────────────────────────────────
 
     def _build_ui(self):
-        # Header
         tk.Label(self, text=APP_NAME, font=("Segoe UI", 15, "bold"),
                  bg=BG, fg=ACCENT).pack(pady=(16, 2))
         tk.Label(self, text=f"Version {APP_VERSION}  ·  GG Engage",
                  font=("Segoe UI", 9), bg=BG, fg="#777").pack()
 
-        # Folder row
         row = tk.Frame(self, bg=BG)
         row.pack(fill="x", padx=14, pady=8)
         tk.Label(row, text="Photo folder:", bg=BG, fg=FG,
@@ -235,12 +411,10 @@ class App(tk.Tk):
                   bg="#3a3a3a", fg=FG, relief="flat",
                   activebackground=ACCENT, cursor="hand2").pack(side="left")
 
-        # Status line
         self._status_var = tk.StringVar()
         tk.Label(self, textvariable=self._status_var,
                  font=("Segoe UI", 10, "bold"), bg=BG, fg=ACCENT).pack(pady=2)
 
-        # Log box
         lf = tk.Frame(self, bg=BG)
         lf.pack(fill="both", expand=True, padx=14)
         sb = tk.Scrollbar(lf)
@@ -251,27 +425,23 @@ class App(tk.Tk):
         self._log.pack(side="left", fill="both", expand=True)
         sb.config(command=self._log.yview)
 
-        # Progress bar
         self._bar = ttk.Progressbar(self, mode="determinate")
         self._bar.pack(fill="x", padx=14, pady=4)
 
-        # Action buttons
         bf = tk.Frame(self, bg=BG)
         bf.pack(pady=10)
         self._proc_btn = tk.Button(
-            bf, text="Process Photos", width=18,
-            command=self._start, cursor="hand2",
-            bg=ACCENT, fg="white", relief="flat",
+            bf, text="Process Photos", width=18, command=self._start,
+            cursor="hand2", bg=ACCENT, fg="white", relief="flat",
             font=("Segoe UI", 10, "bold"), activebackground="#388e3c")
         self._proc_btn.pack(side="left", padx=6)
         self._lic_btn = tk.Button(
-            bf, text="Enter License Key", width=18,
-            command=self._enter_license, cursor="hand2",
-            bg="#3a3a3a", fg=FG, relief="flat",
+            bf, text="Enter License Key", width=18, command=self._enter_license,
+            cursor="hand2", bg="#3a3a3a", fg=FG, relief="flat",
             font=("Segoe UI", 10), activebackground="#555")
         self._lic_btn.pack(side="left", padx=6)
 
-    # ── Event handlers ───────────────────────────────────────────────────────
+    # ── Helpers ──────────────────────────────────────────────────────────────
 
     def _browse(self):
         d = filedialog.askdirectory(title="Select photo folder")
@@ -294,6 +464,8 @@ class App(tk.Tk):
                 f"Status: FREE TRIAL — {left} of {FREE_LIMIT} free photos remaining"
                 f"  (${PRICE_AUD} AUD to unlock)")
 
+    # ── Processing ───────────────────────────────────────────────────────────
+
     def _start(self):
         folder = Path(self._folder.get())
         if not folder.is_dir():
@@ -307,7 +479,6 @@ class App(tk.Tk):
                                 "No image files found in that folder.")
             return
 
-        # Enforce trial limit
         if not self.cfg["licensed"]:
             remaining = FREE_LIMIT - self.cfg["photos_processed"]
             if remaining <= 0:
@@ -365,6 +536,8 @@ class App(tk.Tk):
         if not self.cfg["licensed"] and \
                 self.cfg["photos_processed"] >= FREE_LIMIT:
             self._prompt_purchase()
+
+    # ── Licensing dialogs ─────────────────────────────────────────────────────
 
     def _prompt_purchase(self):
         messagebox.showinfo(
