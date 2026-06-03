@@ -30,6 +30,8 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from pathlib import Path
 from urllib.parse import urlparse
 
+import webbrowser
+
 import requests
 import piexif
 from PIL import Image, ImageDraw, ImageFont
@@ -305,16 +307,19 @@ def _validate_key_hmac(key: str) -> bool:
 
 # ── Online activation ─────────────────────────────────────────────────────────
 
-def _activate_online(key: str, fingerprint: str) -> tuple[bool, str]:
+def _activate_online(key: str, fingerprint: str) -> tuple[bool, bool, str]:
     """
-    POST to the license server. Returns (success, message).
-    May raise on network error — catch in the caller.
+    POST to the license server.
+    Returns (success, conflict, message).
+    conflict=True means the key is valid but already bound to a different machine.
     """
-    url  = f"{LICENSE_SERVER}/api/activate"
-    resp = requests.post(url, json={"key": key, "fingerprint": fingerprint},
+    resp = requests.post(f"{LICENSE_SERVER}/api/activate",
+                         json={"key": key, "fingerprint": fingerprint},
                          timeout=15)
     data = resp.json()
-    return data.get("success", False), data.get("message", "Unknown error")
+    return (data.get("success", False),
+            data.get("conflict", False),
+            data.get("message", "Unknown error"))
 
 
 def _validate_online(key: str, fingerprint: str) -> bool:
@@ -666,7 +671,6 @@ class App(tk.Tk):
         if not key:
             return
 
-        # Quick offline HMAC check before touching the network
         if not _validate_key_hmac(key):
             messagebox.showerror(
                 "Invalid key",
@@ -675,24 +679,24 @@ class App(tk.Tk):
                 f"Contact {SUPPORT_EMAIL} if you need help.")
             return
 
-        # Hardware fingerprint must be ready
         if self._hw_fingerprint is None:
             self._hw_fingerprint = _hardware_fingerprint()
 
-        # Disable buttons during network call
         self._lic_btn.config(state="disabled", text="Activating…")
         self.update_idletasks()
 
         def _do_activate():
             try:
-                ok, msg = _activate_online(key, self._hw_fingerprint)
+                ok, conflict, msg = _activate_online(key, self._hw_fingerprint)
             except requests.exceptions.ConnectionError:
-                self.after(0, _network_error,
+                self.after(0, _restore_btn)
+                self.after(0, messagebox.showerror, "Connection error",
                            "Could not connect to the activation server.\n"
                            "Please check your internet connection and try again.")
                 return
             except Exception as exc:
-                self.after(0, _network_error, str(exc))
+                self.after(0, _restore_btn)
+                self.after(0, messagebox.showerror, "Connection error", str(exc))
                 return
 
             if ok:
@@ -700,24 +704,287 @@ class App(tk.Tk):
                                 license_key=key.strip().upper(),
                                 last_validated=int(time.time()))
                 _save_config(self.cfg)
-                self.after(0, _activation_success, msg)
+                self.after(0, self._refresh_status)
+                self.after(0, messagebox.showinfo, "License activated", msg)
+            elif conflict:
+                # Key is valid but bound to a different machine — show options
+                self.after(0, _restore_btn)
+                self.after(0, self._show_conflict_dialog, key)
             else:
-                self.after(0, _activation_failed, msg)
+                self.after(0, _restore_btn)
+                self.after(0, messagebox.showerror, "Activation failed", msg)
 
-        def _activation_success(msg: str):
-            self._refresh_status()
-            messagebox.showinfo("License activated", msg)
-
-        def _activation_failed(msg: str):
+        def _restore_btn():
             self._lic_btn.config(state="normal", text="Enter License Key")
-            messagebox.showerror("Activation failed", msg)
-
-        def _network_error(msg: str):
-            self._lic_btn.config(state="normal", text="Enter License Key")
-            messagebox.showerror("Connection error", msg)
 
         threading.Thread(target=_do_activate, daemon=True).start()
 
+    # ── Machine-conflict resolution ───────────────────────────────────────────
+
+    def _show_conflict_dialog(self, key: str):
+        """Show the 3-option dialog when a key is already bound to another machine."""
+        dlg = _DeviceConflictDialog(self)
+        if dlg.result == _DeviceConflictDialog.NEW_MACHINE:
+            self._flow_new_machine(key)
+        elif dlg.result == _DeviceConflictDialog.NEW_PURCHASE:
+            webbrowser.open(f"https://{SUPPORT_EMAIL.split('@')[1]}")
+        elif dlg.result == _DeviceConflictDialog.COMPONENT:
+            self._flow_component_replacement(key)
+
+    def _flow_new_machine(self, key: str):
+        """Step 1 — request a verification code; Step 2 — confirm it."""
+        # Step 1: request code
+        self._lic_btn.config(state="disabled", text="Sending code…")
+        self.update_idletasks()
+
+        def _request():
+            try:
+                resp = requests.post(f"{LICENSE_SERVER}/api/transfer/request",
+                                     json={"key": key}, timeout=15)
+                data = resp.json()
+            except Exception as exc:
+                self.after(0, _restore)
+                self.after(0, messagebox.showerror, "Connection error", str(exc))
+                return
+
+            if not data.get("success"):
+                self.after(0, _restore)
+                self.after(0, messagebox.showerror, "Transfer failed",
+                           data.get("message", "Unknown error"))
+                return
+
+            self.after(0, _restore)
+            self.after(0, _ask_code, data.get("message", ""))
+
+        def _ask_code(server_msg: str):
+            code = simpledialog.askstring(
+                "Verification Code",
+                f"{server_msg}\n\nEnter the 6-digit code from your email:",
+                parent=self)
+            if not code:
+                return
+
+            self._lic_btn.config(state="disabled", text="Verifying…")
+            self.update_idletasks()
+            threading.Thread(target=_confirm, args=(code,), daemon=True).start()
+
+        def _confirm(code: str):
+            try:
+                resp = requests.post(f"{LICENSE_SERVER}/api/transfer/confirm",
+                                     json={"key": key, "code": code.strip(),
+                                           "fingerprint": self._hw_fingerprint},
+                                     timeout=15)
+                data = resp.json()
+            except Exception as exc:
+                self.after(0, _restore)
+                self.after(0, messagebox.showerror, "Connection error", str(exc))
+                return
+
+            self.after(0, _restore)
+            if data.get("success"):
+                self.cfg.update(licensed=True,
+                                license_key=key.strip().upper(),
+                                last_validated=int(time.time()))
+                _save_config(self.cfg)
+                self.after(0, self._refresh_status)
+                self.after(0, messagebox.showinfo,
+                           "License transferred", data["message"])
+            else:
+                self.after(0, messagebox.showerror,
+                           "Transfer failed", data.get("message", "Unknown error"))
+
+        def _restore():
+            self._lic_btn.config(state="normal", text="Enter License Key")
+
+        threading.Thread(target=_request, daemon=True).start()
+
+    def _flow_component_replacement(self, key: str):
+        """Log a support ticket and open the email client for manual processing."""
+        dlg = _ComponentDetailDialog(self)
+        if dlg.component is None:
+            return
+
+        def _log_ticket():
+            try:
+                resp = requests.post(
+                    f"{LICENSE_SERVER}/api/support/ticket",
+                    json={"key": key,
+                          "ticket_type": "component_replacement",
+                          "component":   dlg.component,
+                          "description": dlg.description},
+                    timeout=15)
+                data = resp.json()
+            except Exception:
+                data = {"success": False, "ticket_ref": "N/A",
+                        "message": "Could not log ticket — please email us directly."}
+
+            ticket_ref = data.get("ticket_ref", "")
+            self.after(0, _open_email_and_notify, ticket_ref,
+                       data.get("message", ""))
+
+        def _open_email_and_notify(ticket_ref: str, server_msg: str):
+            subj = (f"License Transfer Request — {ticket_ref}"
+                    if ticket_ref else "License Transfer Request")
+            body = (f"License Key: {key}\n"
+                    f"Ticket Reference: {ticket_ref}\n"
+                    f"Component Replaced: {dlg.component}\n\n"
+                    f"Details:\n{dlg.description}\n\n"
+                    f"Please transfer my license to my current computer.")
+            import urllib.parse
+            mailto = (f"mailto:{SUPPORT_EMAIL}"
+                      f"?subject={urllib.parse.quote(subj)}"
+                      f"&body={urllib.parse.quote(body)}")
+            webbrowser.open(mailto)
+            messagebox.showinfo("Support Request Logged", server_msg)
+
+        threading.Thread(target=_log_ticket, daemon=True).start()
+
+
+# ── Device-conflict resolution dialog ────────────────────────────────────────
+
+class _DeviceConflictDialog(tk.Toplevel):
+    """
+    Shown when activation is rejected due to a hardware fingerprint mismatch.
+    Presents three clearly labelled paths so the customer can self-serve.
+    """
+    NEW_MACHINE  = "new_machine"
+    NEW_PURCHASE = "new_purchase"
+    COMPONENT    = "component"
+
+    def __init__(self, parent: tk.Tk):
+        super().__init__(parent)
+        self.result: str | None = None
+        self.title("License Already Activated")
+        self.geometry("500x410")
+        self.resizable(False, False)
+        self.configure(bg=BG)
+        self.transient(parent)
+        self.grab_set()
+        self._build()
+        self.wait_window()
+
+    def _build(self):
+        tk.Label(self,
+                 text="This license key is already activated\non a different device.",
+                 font=("Segoe UI", 12, "bold"), bg=BG, fg=FG,
+                 justify="center").pack(pady=(22, 4))
+        tk.Label(self,
+                 text="What best describes your situation?",
+                 font=("Segoe UI", 10), bg=BG, fg="#999").pack(pady=(0, 14))
+
+        options = [
+            (self.NEW_MACHINE,
+             "I purchased a new computer",
+             "Deactivate the old machine and activate this one.\n"
+             "A 6-digit code will be emailed to your registered address."),
+            (self.NEW_PURCHASE,
+             "I want to purchase a new license",
+             f"Open the purchase page in your browser (${PRICE_AUD} AUD)."),
+            (self.COMPONENT,
+             "I replaced a component  (hard drive / motherboard)",
+             "The hardware change altered this device's fingerprint.\n"
+             "Log a support request — we will transfer your license manually\n"
+             "within 1 business day."),
+        ]
+        for choice, title, desc in options:
+            self._make_option(choice, title, desc)
+
+        tk.Button(self, text="Cancel", command=self.destroy,
+                  bg="#3a3a3a", fg=FG, relief="flat",
+                  font=("Segoe UI", 9), cursor="hand2").pack(pady=(6, 18))
+
+    def _make_option(self, choice: str, title: str, desc: str):
+        frame = tk.Frame(self, bg="#2b2b2b", cursor="hand2")
+        frame.pack(fill="x", padx=18, pady=5)
+        tk.Label(frame, text=title, font=("Segoe UI", 10, "bold"),
+                 bg="#2b2b2b", fg=ACCENT, anchor="w",
+                 cursor="hand2").pack(fill="x", padx=14, pady=(10, 2))
+        tk.Label(frame, text=desc, font=("Segoe UI", 9),
+                 bg="#2b2b2b", fg="#aaa", anchor="w", justify="left",
+                 cursor="hand2").pack(fill="x", padx=14, pady=(0, 10))
+
+        def _hover_on(e,  f=frame): _set_bg(f, "#3a3a3a")
+        def _hover_off(e, f=frame): _set_bg(f, "#2b2b2b")
+        def _click(e, c=choice): self._choose(c)
+
+        for w in [frame] + list(frame.winfo_children()):
+            w.bind("<Enter>",    _hover_on)
+            w.bind("<Leave>",    _hover_off)
+            w.bind("<Button-1>", _click)
+
+    def _choose(self, choice: str):
+        self.result = choice
+        self.destroy()
+
+
+def _set_bg(widget: tk.Widget, color: str):
+    widget.configure(bg=color)
+    for child in widget.winfo_children():
+        child.configure(bg=color)
+
+
+# ── Component detail dialog ───────────────────────────────────────────────────
+
+class _ComponentDetailDialog(tk.Toplevel):
+    """
+    Collects component type and description for a manual transfer request.
+    """
+    _COMPONENTS = [
+        "Hard Drive / SSD",
+        "Motherboard",
+        "Hard Drive + Motherboard",
+        "Other component",
+    ]
+
+    def __init__(self, parent: tk.Tk):
+        super().__init__(parent)
+        self.component:   str | None = None
+        self.description: str        = ""
+        self.title("Component Replacement Details")
+        self.geometry("420x300")
+        self.resizable(False, False)
+        self.configure(bg=BG)
+        self.transient(parent)
+        self.grab_set()
+        self._build()
+        self.wait_window()
+
+    def _build(self):
+        tk.Label(self, text="What did you replace?",
+                 font=("Segoe UI", 11, "bold"), bg=BG, fg=FG).pack(pady=(18, 8))
+
+        self._comp_var = tk.StringVar(value=self._COMPONENTS[0])
+        for comp in self._COMPONENTS:
+            tk.Radiobutton(self, text=comp, variable=self._comp_var, value=comp,
+                           bg=BG, fg=FG, selectcolor="#3a3a3a",
+                           activebackground=BG, activeforeground=FG,
+                           font=("Segoe UI", 10)).pack(anchor="w", padx=30)
+
+        tk.Label(self, text="Briefly describe what happened (optional):",
+                 font=("Segoe UI", 9), bg=BG, fg="#999").pack(anchor="w",
+                                                               padx=30, pady=(12, 4))
+        self._desc = tk.Text(self, height=3, bg="#2b2b2b", fg=FG,
+                             insertbackground=FG, relief="flat",
+                             font=("Segoe UI", 9))
+        self._desc.pack(fill="x", padx=30)
+
+        bf = tk.Frame(self, bg=BG)
+        bf.pack(pady=14)
+        tk.Button(bf, text="Submit Request", command=self._submit,
+                  bg=ACCENT, fg="white", relief="flat",
+                  font=("Segoe UI", 10, "bold"), cursor="hand2",
+                  activebackground="#388e3c").pack(side="left", padx=6)
+        tk.Button(bf, text="Cancel", command=self.destroy,
+                  bg="#3a3a3a", fg=FG, relief="flat",
+                  font=("Segoe UI", 9), cursor="hand2").pack(side="left")
+
+    def _submit(self):
+        self.component   = self._comp_var.get()
+        self.description = self._desc.get("1.0", "end").strip()
+        self.destroy()
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
     pending_key = _extract_key_from_args(sys.argv[1:])
