@@ -1,0 +1,37 @@
+## Render.com deployment config
+## Deploy at: https://dashboard.render.com → New → Web Service → connect repo
+## Set the Root Directory to "server" in the Render UI.
+
+services:
+  - type: web
+    name: gg-engage-license-server
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    disk:
+      name: license-db
+      mountPath: /data
+      sizeGB: 1
+
+    # Set these in the Render dashboard → Environment tab (never commit secrets)
+    envVars:
+      - key: STRIPE_SECRET_KEY
+        sync: false          # paste your Stripe sk_live_... key
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false          # paste your Stripe whsec_... webhook secret
+      - key: LICENSE_HMAC_SECRET
+        sync: false          # must match _LIC_SECRET in process_photos.py
+      - key: ADMIN_API_KEY
+        sync: false          # any long random string; used for admin endpoints
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false          # your Gmail address
+      - key: SMTP_PASS
+        sync: false          # Gmail App Password (not your login password)
+      - key: FROM_EMAIL
+        sync: false
+      - key: FROM_NAME
+        value: GG Engage

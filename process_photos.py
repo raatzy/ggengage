@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
 GG Engage Photo Processor — Windows GUI application.
-Reads GPS EXIF data, reverse geocodes to city/country, overlays the location
-on each photo, resizes to 1200 px on the longest side, and saves the result
-as a JPEG in a 'processed/' subfolder.
 
-Licensing: first 20 photos free; $AUD 10 license key required after that.
-
-License/trial state is stored encrypted in three independent hidden locations
-bound to the local machine. Uninstalling and reinstalling does not reset the
-trial, and copying files to another computer does not transfer the license.
+Licensing model
+---------------
+• First 20 photos: free trial (counter persists through uninstall/reinstall)
+• After 20 photos: $AUD 10 license required
+• Activation: online (app calls the license server the first time a key is entered)
+• Hardware binding: the server binds the key to this machine's fingerprint
+  (motherboard serial + primary disk serial + CPU ID + Windows MachineGuid)
+  on first activation; the same key cannot be activated on a different machine
+• Subsequent startups: validated locally (works offline); server re-checked weekly
 
 Install dependencies:
-    pip install Pillow piexif geopy cryptography
+    pip install Pillow piexif geopy cryptography requests
 """
 
 import base64
@@ -20,13 +21,16 @@ import hashlib
 import hmac
 import json
 import os
+import subprocess
 import sys
 import threading
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from pathlib import Path
+from urllib.parse import urlparse
 
+import requests
 import piexif
 from PIL import Image, ImageDraw, ImageFont
 from geopy.geocoders import Nominatim
@@ -37,11 +41,8 @@ try:
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
     from cryptography.hazmat.primitives import hashes as _ch
 except ImportError:
-    sys.exit(
-        "Missing dependency — run:  pip install cryptography  then try again.")
+    sys.exit("Missing dependency — run:  pip install cryptography  then try again.")
 
-# Windows-only modules (guarded so the script still imports on Linux/macOS
-# during development; all Windows paths are _WIN-gated at runtime)
 _WIN = sys.platform == "win32"
 if _WIN:
     import ctypes
@@ -51,34 +52,33 @@ if _WIN:
 
 # ── App constants ─────────────────────────────────────────────────────────────
 
-APP_NAME      = "GG Engage Photo Processor"
-APP_VERSION   = "1.0.0"
-FREE_LIMIT    = 20
-PRICE_AUD     = 10
-SUPPORT_EMAIL = "support@ggengage.com.au"
+APP_NAME          = "GG Engage Photo Processor"
+APP_VERSION       = "1.0.0"
+FREE_LIMIT        = 20
+PRICE_AUD         = 10
+SUPPORT_EMAIL     = "support@ggengage.com.au"
+LICENSE_SERVER    = "https://api.ggengage.com.au"   # your Render.com URL
+DEEP_LINK_SCHEME  = "ggphoto"
+VALIDATE_INTERVAL = 7 * 24 * 3600                   # re-validate online weekly
 
-# HMAC secret for offline license-key validation
+# HMAC secret — must match LICENSE_HMAC_SECRET env var on the server
+# and _LIC_SECRET / _SECRET in installer/keygen.py
 _LIC_SECRET = b"GGEngagePhotoProc-k9xP2025#mR7"
 
-# HKDF salt for per-machine storage encryption (keep private)
+# HKDF salt for local storage encryption
 _KDF_SALT = b"GGEngPhotoProc-StoreSalt-2025#v1"
 
-# ── Hidden storage locations ──────────────────────────────────────────────────
-# These paths look like legitimate Windows system files and are NOT touched
-# by the app's own uninstaller, so the trial counter survives reinstalls.
+# ── Hidden local storage locations ───────────────────────────────────────────
+# These survive app uninstall. See SoftwareSecurity skill for full rationale.
 
 _APPDATA  = Path(os.environ.get("APPDATA",      str(Path.home())))
 _LAPPDATA = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
 
-# Location 1 (registry): disguised as a COM AppID registration
 _REG_KEY = r"Software\Classes\AppID\{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}"
 _REG_VAL = "LocalService"
 
-# Location 2 (file): looks like a Windows jump-list file
-_FILE_A = (_APPDATA / "Microsoft/Windows/Recent/AutomaticDestinations"
+_FILE_A = (_APPDATA  / "Microsoft/Windows/Recent/AutomaticDestinations"
            / "a3f7c2d14b8e4f9a.automaticDestinations-ms")
-
-# Location 3 (file): looks like a Windows thumbnail cache file
 _FILE_B = (_LAPPDATA / "Microsoft/Windows/Explorer"
            / "thumbcache_{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}.db")
 
@@ -94,19 +94,62 @@ OVERLAY_ALPHA = 160
 BG, FG, ACCENT = "#1e1e1e", "#f0f0f0", "#4caf50"
 
 
-# ── Machine fingerprint + per-machine Fernet key ──────────────────────────────
+# ── Hardware fingerprinting ───────────────────────────────────────────────────
 
-def _machine_id() -> str:
+def _wmic(args: list[str]) -> str:
     """
-    Build a stable hardware fingerprint.
-    Sources: Windows MachineGuid (set at OS install) + C: volume serial.
-    Survives reboots, Windows Updates, and app reinstalls.
-    Changes only if the OS is reinstalled or the system drive is reformatted.
+    Run a wmic query with /value output and return the first non-empty value.
+    Filters out OEM placeholder strings ("To Be Filled By O.E.M." etc.).
+    """
+    _oem_junk = {"to be filled by o.e.m.", "none", "n/a",
+                 "default string", "not applicable", "", "0"}
+    try:
+        r = subprocess.run(
+            ["wmic"] + args + ["/value"],
+            capture_output=True, text=True, timeout=8,
+            creationflags=0x08000000 if _WIN else 0)   # CREATE_NO_WINDOW
+        for line in r.stdout.splitlines():
+            if "=" in line:
+                val = line.split("=", 1)[1].strip()
+                if val.lower() not in _oem_junk:
+                    return val
+    except Exception:
+        pass
+    return ""
+
+
+def _hardware_fingerprint() -> str:
+    """
+    Build a strong machine fingerprint from hardware identifiers.
+    Used for online license binding — sent as a SHA-256 hash (not raw values).
+
+    Sources (in priority order):
+      1. Motherboard manufacturer + serial number
+      2. Primary physical disk serial number
+      3. CPU processor ID
+      4. Windows MachineGuid (registry)
+      5. C: volume serial (fastest fallback)
     """
     parts: list[str] = []
 
     if _WIN:
-        # Windows MachineGuid — created once at Windows setup
+        # Motherboard
+        mb_mfr    = _wmic(["baseboard", "get", "manufacturer"])
+        mb_serial = _wmic(["baseboard", "get", "serialnumber"])
+        if mb_serial:
+            parts.append(f"mb:{mb_mfr}:{mb_serial}")
+
+        # Primary disk (physical drive 0)
+        disk = _wmic(["diskdrive", "where", "index=0", "get", "serialnumber"])
+        if disk:
+            parts.append(f"disk:{disk}")
+
+        # CPU
+        cpu = _wmic(["cpu", "get", "processorid"])
+        if cpu:
+            parts.append(f"cpu:{cpu}")
+
+        # Windows MachineGuid
         try:
             k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
                                r"SOFTWARE\Microsoft\Cryptography")
@@ -116,7 +159,7 @@ def _machine_id() -> str:
         except Exception:
             pass
 
-        # C: drive volume serial number
+        # C: volume serial (fastest; always available)
         try:
             serial = ctypes.wintypes.DWORD(0)
             ctypes.windll.kernel32.GetVolumeInformationW(
@@ -125,29 +168,46 @@ def _machine_id() -> str:
         except Exception:
             pass
 
-    # Computer name — fallback; less stable but present everywhere
     parts.append(f"host:{os.environ.get('COMPUTERNAME', 'unknown')}")
-
     combined = "||".join(parts) or "no-hw-info"
     return hashlib.sha256(combined.encode()).hexdigest()
 
 
-def _make_fernet(machine_id: str) -> Fernet:
-    """Derive a machine-specific Fernet key via HKDF (fast, deterministic)."""
-    raw = HKDF(
-        algorithm=_ch.SHA256(),
-        length=32,
-        salt=_KDF_SALT,
-        info=b"GGEngagePhotoProcessor-store-v1",
-    ).derive(machine_id.encode())
-    return Fernet(base64.urlsafe_b64encode(raw))
+def _fast_machine_id() -> str:
+    """
+    Lighter fingerprint used only for local Fernet key derivation
+    (no wmic calls — runs at import time without delaying startup).
+    """
+    parts: list[str] = []
+    if _WIN:
+        try:
+            k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                               r"SOFTWARE\Microsoft\Cryptography")
+            guid, _ = winreg.QueryValueEx(k, "MachineGuid")
+            winreg.CloseKey(k)
+            parts.append(f"guid:{guid}")
+        except Exception:
+            pass
+        try:
+            serial = ctypes.wintypes.DWORD(0)
+            ctypes.windll.kernel32.GetVolumeInformationW(
+                "C:\\", None, 0, ctypes.byref(serial), None, None, None, 0)
+            parts.append(f"vol:{serial.value:08x}")
+        except Exception:
+            pass
+    parts.append(f"host:{os.environ.get('COMPUTERNAME', 'unknown')}")
+    return hashlib.sha256(("||".join(parts) or "no-hw").encode()).hexdigest()
 
 
-# Build and cache the Fernet instance at import time (HKDF is instant)
-_FERNET = _make_fernet(_machine_id())
+# Derive and cache local Fernet key at import time (HKDF is instant)
+_FERNET = Fernet(base64.urlsafe_b64encode(
+    HKDF(algorithm=_ch.SHA256(), length=32,
+         salt=_KDF_SALT,
+         info=b"GGEngagePhotoProcessor-store-v1"
+         ).derive(_fast_machine_id().encode())))
 
 
-# ── Raw storage I/O ───────────────────────────────────────────────────────────
+# ── Local storage (3 hidden locations) ───────────────────────────────────────
 
 def _reg_read() -> bytes | None:
     if not _WIN:
@@ -183,7 +243,6 @@ def _file_write(path: Path, data: bytes) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
-        # Mark the file hidden so it doesn't appear in Explorer
         if _WIN:
             try:
                 ctypes.windll.kernel32.SetFileAttributesW(str(path), 0x02)
@@ -193,10 +252,7 @@ def _file_write(path: Path, data: bytes) -> None:
         pass
 
 
-# ── Config load / save ────────────────────────────────────────────────────────
-
 def _decrypt_one(raw: bytes | None) -> dict | None:
-    """Decrypt and parse one storage blob; returns None on any failure."""
     if raw is None:
         return None
     try:
@@ -206,28 +262,17 @@ def _decrypt_one(raw: bytes | None) -> dict | None:
 
 
 def _load_config() -> dict:
-    """
-    Read all three storage locations. The winner is whichever valid record
-    shows a license, or else the one with the highest photo count.
-
-    Any missing or corrupted location is silently restored from the winner so
-    that all three stay in sync. If ALL three are missing or unreadable (e.g.
-    first run on a new machine) a fresh default config is returned.
-    """
     blobs   = [_reg_read(), _file_read(_FILE_A), _file_read(_FILE_B)]
     records = [_decrypt_one(b) for b in blobs]
     valid   = [r for r in records if r is not None]
 
     if not valid:
-        # Genuine first run on this machine, or OS reinstall
-        return {"photos_processed": 0, "licensed": False, "license_key": None}
+        return {"photos_processed": 0, "licensed": False,
+                "license_key": None, "last_validated": 0}
 
-    # Licensed record wins; otherwise highest photo count
-    winner = max(valid,
-                 key=lambda c: (int(c.get("licensed", False)),
-                                c.get("photos_processed", 0)))
+    winner = max(valid, key=lambda c: (int(c.get("licensed", False)),
+                                       c.get("photos_processed", 0)))
 
-    # Restore any location that was missing or tampered
     encrypted = _FERNET.encrypt(json.dumps(winner).encode())
     if records[0] is None:
         _reg_write(encrypted)
@@ -240,30 +285,57 @@ def _load_config() -> dict:
 
 
 def _save_config(cfg: dict) -> None:
-    """Encrypt and write config to all three locations atomically."""
     encrypted = _FERNET.encrypt(json.dumps(cfg).encode())
     _reg_write(encrypted)
     _file_write(_FILE_A, encrypted)
     _file_write(_FILE_B, encrypted)
 
 
-# ── License key validation (machine-agnostic HMAC check) ─────────────────────
+# ── License key HMAC (quick offline check) ────────────────────────────────────
 
-def _validate_key(key: str) -> bool:
-    """
-    Offline validation — no network call.
-    Key format: XXXX-XXXX-XXXX-XXXX (16 hex chars, hyphens optional).
-    First 8 chars = random payload; last 8 = HMAC-SHA256(secret, payload)[:8].
-    The activation record stored on disk is machine-bound via Fernet; the key
-    itself is machine-agnostic so the user can re-enter it after an OS reinstall.
-    """
+def _validate_key_hmac(key: str) -> bool:
     k = key.strip().upper().replace("-", "").replace(" ", "")
     if len(k) != 16:
         return False
     payload  = k[:8]
     expected = hmac.new(_LIC_SECRET, payload.encode(),
                         hashlib.sha256).hexdigest()[:8].upper()
-    return k[8:] == expected
+    return hmac.compare_digest(k[8:], expected)
+
+
+# ── Online activation ─────────────────────────────────────────────────────────
+
+def _activate_online(key: str, fingerprint: str) -> tuple[bool, str]:
+    """
+    POST to the license server. Returns (success, message).
+    May raise on network error — catch in the caller.
+    """
+    url  = f"{LICENSE_SERVER}/api/activate"
+    resp = requests.post(url, json={"key": key, "fingerprint": fingerprint},
+                         timeout=15)
+    data = resp.json()
+    return data.get("success", False), data.get("message", "Unknown error")
+
+
+def _validate_online(key: str, fingerprint: str) -> bool:
+    """Periodic background check. Returns False on any error (fail open)."""
+    try:
+        url  = f"{LICENSE_SERVER}/api/validate"
+        resp = requests.get(url, params={"key": key, "fingerprint": fingerprint},
+                            timeout=10)
+        return resp.json().get("valid", False)
+    except Exception:
+        return True   # server unreachable → trust local cache
+
+
+# ── Deep-link parser ──────────────────────────────────────────────────────────
+
+def _extract_key_from_args(args: list[str]) -> str | None:
+    """Extract license key from  ggphoto://activate/XXXX-XXXX-XXXX-XXXX  URL."""
+    for arg in args:
+        if arg.lower().startswith(f"{DEEP_LINK_SCHEME}://activate/"):
+            return arg.split("/")[-1].strip()
+    return None
 
 
 # ── Image helpers ─────────────────────────────────────────────────────────────
@@ -321,11 +393,9 @@ def _resize(img: Image.Image) -> Image.Image:
 
 def _load_font(size: int) -> ImageFont.ImageFont:
     windir = os.environ.get("WINDIR", "C:/Windows")
-    for path in [
-        f"{windir}/Fonts/arial.ttf",
-        f"{windir}/Fonts/segoeui.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    ]:
+    for path in [f"{windir}/Fonts/arial.ttf",
+                 f"{windir}/Fonts/segoeui.ttf",
+                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]:
         try:
             return ImageFont.truetype(path, size)
         except (IOError, OSError):
@@ -381,15 +451,24 @@ def _process_photo(photo: Path, geolocator) -> str | None:
 # ── Main window ───────────────────────────────────────────────────────────────
 
 class App(tk.Tk):
-    def __init__(self):
+    def __init__(self, pending_key: str | None = None):
         super().__init__()
         self.title(APP_NAME)
         self.geometry("640x540")
         self.resizable(False, False)
         self.configure(bg=BG)
+
         self.cfg = _load_config()
+        self._hw_fingerprint: str | None = None   # computed lazily in bg thread
         self._build_ui()
         self._refresh_status()
+
+        # Deep-link / auto-activation from email button
+        if pending_key and not self.cfg["licensed"]:
+            self.after(600, lambda: self._enter_license(prefill=pending_key))
+
+        # Background: compute hw fingerprint + weekly online re-validation
+        threading.Thread(target=self._background_init, daemon=True).start()
 
     # ── UI ───────────────────────────────────────────────────────────────────
 
@@ -436,8 +515,9 @@ class App(tk.Tk):
             font=("Segoe UI", 10, "bold"), activebackground="#388e3c")
         self._proc_btn.pack(side="left", padx=6)
         self._lic_btn = tk.Button(
-            bf, text="Enter License Key", width=18, command=self._enter_license,
-            cursor="hand2", bg="#3a3a3a", fg=FG, relief="flat",
+            bf, text="Enter License Key", width=18,
+            command=self._enter_license, cursor="hand2",
+            bg="#3a3a3a", fg=FG, relief="flat",
             font=("Segoe UI", 10), activebackground="#555")
         self._lic_btn.pack(side="left", padx=6)
 
@@ -464,6 +544,35 @@ class App(tk.Tk):
                 f"Status: FREE TRIAL — {left} of {FREE_LIMIT} free photos remaining"
                 f"  (${PRICE_AUD} AUD to unlock)")
 
+    def _background_init(self):
+        """Run at startup in a daemon thread — does NOT block the UI."""
+        # 1. Pre-compute hardware fingerprint so activation is instant
+        self._hw_fingerprint = _hardware_fingerprint()
+
+        # 2. Weekly online re-validation for licensed installs
+        if not self.cfg.get("licensed"):
+            return
+        last = self.cfg.get("last_validated", 0)
+        if time.time() - last < VALIDATE_INTERVAL:
+            return
+        key         = self.cfg.get("license_key", "")
+        fingerprint = self._hw_fingerprint
+        if key and fingerprint:
+            still_valid = _validate_online(key, fingerprint)
+            if not still_valid:
+                # Server explicitly says revoked — disable locally
+                self.cfg["licensed"]    = False
+                self.cfg["license_key"] = None
+                _save_config(self.cfg)
+                self.after(0, self._refresh_status)
+                self.after(0, lambda: messagebox.showwarning(
+                    "License revoked",
+                    "Your license has been revoked.\n"
+                    f"Please contact {SUPPORT_EMAIL} for assistance."))
+            else:
+                self.cfg["last_validated"] = int(time.time())
+                _save_config(self.cfg)
+
     # ── Processing ───────────────────────────────────────────────────────────
 
     def _start(self):
@@ -487,9 +596,9 @@ class App(tk.Tk):
             if len(photos) > remaining:
                 if not messagebox.askyesno(
                     "Free trial limit",
-                    f"Your free trial allows {remaining} more photo(s), "
-                    f"but you selected {len(photos)}.\n\n"
-                    f"Only the first {remaining} will be processed.\n\n"
+                    f"Free trial: {remaining} photo(s) remaining.\n"
+                    f"You selected {len(photos)} — only the first {remaining} "
+                    f"will be processed.\n\n"
                     f"Purchase a license (${PRICE_AUD} AUD) for unlimited use.\n\n"
                     f"Continue with {remaining} photo(s)?"):
                     return
@@ -544,36 +653,75 @@ class App(tk.Tk):
             "Free trial complete",
             f"You have used all {FREE_LIMIT} free photos.\n\n"
             f"To keep processing, please purchase a license for ${PRICE_AUD} AUD.\n\n"
-            f"Contact:  {SUPPORT_EMAIL}\n\n"
-            f"After payment you will receive a 16-character license key.")
+            f"Visit:  ggengage.com.au\n\n"
+            f"After payment your license key will be emailed to you automatically.")
         self._enter_license()
 
-    def _enter_license(self):
+    def _enter_license(self, prefill: str = ""):
         key = simpledialog.askstring(
             "Enter License Key",
             "Enter your license key (format: XXXX-XXXX-XXXX-XXXX):",
+            initialvalue=prefill,
             parent=self)
         if not key:
             return
-        if _validate_key(key):
-            self.cfg.update(licensed=True,
-                            license_key=key.strip().upper())
-            _save_config(self.cfg)
-            self._refresh_status()
-            messagebox.showinfo(
-                "License activated",
-                "Your license has been activated — thank you for your purchase!\n\n"
-                "You can now process unlimited photos.")
-        else:
+
+        # Quick offline HMAC check before touching the network
+        if not _validate_key_hmac(key):
             messagebox.showerror(
                 "Invalid key",
-                "That license key was not recognised.\n"
+                "That key format is not valid.\n"
                 "Please check for typos and try again.\n\n"
-                f"If the problem continues, contact {SUPPORT_EMAIL}")
+                f"Contact {SUPPORT_EMAIL} if you need help.")
+            return
+
+        # Hardware fingerprint must be ready
+        if self._hw_fingerprint is None:
+            self._hw_fingerprint = _hardware_fingerprint()
+
+        # Disable buttons during network call
+        self._lic_btn.config(state="disabled", text="Activating…")
+        self.update_idletasks()
+
+        def _do_activate():
+            try:
+                ok, msg = _activate_online(key, self._hw_fingerprint)
+            except requests.exceptions.ConnectionError:
+                self.after(0, _network_error,
+                           "Could not connect to the activation server.\n"
+                           "Please check your internet connection and try again.")
+                return
+            except Exception as exc:
+                self.after(0, _network_error, str(exc))
+                return
+
+            if ok:
+                self.cfg.update(licensed=True,
+                                license_key=key.strip().upper(),
+                                last_validated=int(time.time()))
+                _save_config(self.cfg)
+                self.after(0, _activation_success, msg)
+            else:
+                self.after(0, _activation_failed, msg)
+
+        def _activation_success(msg: str):
+            self._refresh_status()
+            messagebox.showinfo("License activated", msg)
+
+        def _activation_failed(msg: str):
+            self._lic_btn.config(state="normal", text="Enter License Key")
+            messagebox.showerror("Activation failed", msg)
+
+        def _network_error(msg: str):
+            self._lic_btn.config(state="normal", text="Enter License Key")
+            messagebox.showerror("Connection error", msg)
+
+        threading.Thread(target=_do_activate, daemon=True).start()
 
 
 def main():
-    app = App()
+    pending_key = _extract_key_from_args(sys.argv[1:])
+    app = App(pending_key=pending_key)
     app.mainloop()
 
 

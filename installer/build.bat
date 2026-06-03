@@ -12,20 +12,21 @@ python --version >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Python not found.
     echo        Install Python 3.11+ from https://python.org
-    echo        Make sure "Add Python to PATH" is ticked during install.
+    echo        Tick "Add Python to PATH" during install.
     pause & exit /b 1
 )
 for /f "tokens=*" %%v in ('python --version') do echo Using %%v
 echo.
 
-REM ── Install / upgrade Python dependencies ────────────────────
+REM ── Install / upgrade all Python dependencies ────────────────
 echo [1/3] Installing Python dependencies...
 pip install --quiet --upgrade ^
     pyinstaller ^
     Pillow ^
     piexif ^
     geopy ^
-    cryptography
+    cryptography ^
+    requests
 if errorlevel 1 (
     echo ERROR: pip install failed. Check your internet connection.
     pause & exit /b 1
@@ -33,7 +34,7 @@ if errorlevel 1 (
 echo       Done.
 echo.
 
-REM ── Run PyInstaller ───────────────────────────────────────────
+REM ── Build standalone exe with PyInstaller ────────────────────
 echo [2/3] Building standalone exe with PyInstaller...
 cd /d "%~dp0.."
 
@@ -51,6 +52,8 @@ pyinstaller ^
     --hidden-import cryptography.hazmat.primitives.kdf.hkdf ^
     --hidden-import cryptography.hazmat.primitives.hashes ^
     --hidden-import cryptography.hazmat.backends ^
+    --hidden-import requests ^
+    --hidden-import urllib3 ^
     --clean ^
     --noconfirm ^
     process_photos.py
@@ -62,7 +65,7 @@ if errorlevel 1 (
 echo       Done.  Output: dist\PhotoProcessor\
 echo.
 
-REM ── Find and run Inno Setup ───────────────────────────────────
+REM ── Build installer with Inno Setup ──────────────────────────
 echo [3/3] Building installer with Inno Setup 6...
 
 set ISCC=
@@ -76,17 +79,15 @@ for %%P in (
         goto :found_iscc
     )
 )
-
-echo ERROR: Inno Setup 6 not found in standard locations.
+echo ERROR: Inno Setup 6 not found.
 echo        Download free from: https://jrsoftware.org/isdl.php
-echo        Then re-run this script.
 pause & exit /b 1
 
 :found_iscc
 echo       Using: !ISCC!
 !ISCC! "%~dp0setup.iss"
 if errorlevel 1 (
-    echo ERROR: Inno Setup compilation failed. See output above.
+    echo ERROR: Inno Setup compilation failed.
     pause & exit /b 1
 )
 
@@ -96,7 +97,7 @@ echo  BUILD COMPLETE
 echo.
 echo  Installer: installer\Output\GGEngagePhotoProcessor_Setup_v1.0.0.exe
 echo.
-echo  Distribute only the installer — never distribute keygen.py
+echo  REMINDER: Never distribute server\ or installer\keygen.py
 echo ============================================================
 echo.
 pause
