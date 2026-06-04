@@ -455,8 +455,24 @@ def _process_photo(photo: Path, geolocator) -> str | None:
 
 # ── Main window ───────────────────────────────────────────────────────────────
 
+def _default_folder() -> str:
+    """
+    Pick the best starting folder for the file picker.
+    Checks OneDrive first (common on Windows 10/11), then Pictures, then home.
+    """
+    if _WIN:
+        # OneDrive personal and business both appear under %OneDrive% or %OneDriveConsumer%
+        for env_var in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
+            od = os.environ.get(env_var, "")
+            if od and Path(od).is_dir():
+                return od
+    pictures = Path.home() / "Pictures"
+    return str(pictures) if pictures.is_dir() else str(Path.home())
+
+
 class App(tk.Tk):
-    def __init__(self, pending_key: str | None = None):
+    def __init__(self, pending_key: str | None = None,
+                 start_folder: str | None = None):
         super().__init__()
         self.title(APP_NAME)
         self.geometry("640x540")
@@ -487,7 +503,7 @@ class App(tk.Tk):
         row.pack(fill="x", padx=14, pady=8)
         tk.Label(row, text="Photo folder:", bg=BG, fg=FG,
                  font=("Segoe UI", 10)).pack(side="left")
-        self._folder = tk.StringVar(value=str(Path.home() / "Pictures"))
+        self._folder = tk.StringVar(value=start_folder or _default_folder())
         tk.Entry(row, textvariable=self._folder, width=44,
                  bg="#2b2b2b", fg=FG, insertbackground=FG,
                  relief="flat", font=("Segoe UI", 9)).pack(side="left", padx=6)
@@ -529,7 +545,10 @@ class App(tk.Tk):
     # ── Helpers ──────────────────────────────────────────────────────────────
 
     def _browse(self):
-        d = filedialog.askdirectory(title="Select photo folder")
+        # Start the dialog at whatever path is already in the box (or home if invalid)
+        current = self._folder.get().strip()
+        start   = current if Path(current).is_dir() else str(Path.home())
+        d = filedialog.askdirectory(title="Select photo folder", initialdir=start)
         if d:
             self._folder.set(d)
 
@@ -987,8 +1006,17 @@ class _ComponentDetailDialog(tk.Toplevel):
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
-    pending_key = _extract_key_from_args(sys.argv[1:])
-    app = App(pending_key=pending_key)
+    pending_key  = _extract_key_from_args(sys.argv[1:])
+
+    # Allow passing a folder path as the first plain argument, e.g.:
+    #   PhotoProcessor.exe "C:\Users\mjraa\OneDrive\Claude\GeoTag Photo"
+    start_folder = None
+    for arg in sys.argv[1:]:
+        if not arg.lower().startswith(DEEP_LINK_SCHEME + "://") and Path(arg).is_dir():
+            start_folder = arg
+            break
+
+    app = App(pending_key=pending_key, start_folder=start_folder)
     app.mainloop()
 
 
