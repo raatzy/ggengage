@@ -93,24 +93,40 @@ GG Engage is committed to protecting your privacy.  This Privacy Statement
 explains how the Software handles information in accordance with the
 Australian Privacy Act 1988 (Cth) and the Australian Privacy Principles.
 
-1. NO DATA COLLECTED
-   This Software does NOT collect, transmit, upload, or share any personal
-   data, photos, metadata, or usage information with the Licensor, any third
-   party, or any remote server.
+1. WHAT DATA IS PROCESSED
+   This Software does NOT collect, sell, or share any personal data, photos,
+   or metadata.  Your photos are processed entirely on your local computer
+   and are never uploaded or transmitted anywhere.
 
-   All processing occurs entirely on your local computer.
+2. LOCAL STORAGE
+   The Software stores the following data ONLY on your own computer, in
+   Windows registry entries and local user-profile files accessible only to
+   your Windows user account:
 
-2. LOCAL STORAGE ONLY
-   The Software stores the following data ONLY on your own computer, in the
-   folder  %APPDATA%\GGEngagePhotoProcessor\:
+   - The number of photos you have processed (for the free-trial counter),
+     encrypted with a key derived from this computer's hardware identifiers.
+   - Your licence key (if you have purchased one), stored in encrypted form.
 
-   - The number of photos you have processed (for the free-trial counter).
-   - Your licence key (if you have purchased one), stored in a plain
-     JSON file accessible only to your Windows user account.
+   This data is bound to your computer and cannot be read on another machine.
+   It is intentionally retained across uninstalls to prevent free-trial abuse.
+   It is never transmitted to any server except as described in Section 3.
 
-   This data never leaves your computer.
+3. LICENCE ACTIVATION (LICENSED USERS ONLY)
+   When you activate a licence key, the Software sends the following to the
+   GG Engage licence server (api.ggengage.com.au) over HTTPS:
 
-3. THIRD-PARTY REVERSE GEOCODING (NOMINATIM)
+   - Your licence key.
+   - A one-way SHA-256 hash derived from hardware identifiers on this
+     computer (motherboard serial, disk serial, CPU ID, Windows MachineGuid,
+     and volume serial number).  The raw hardware values are NOT sent — only
+     the irreversible hash, which is used to bind the licence to this machine.
+
+   No photos, personal details, file names, or usage statistics are sent.
+   After initial activation, the Software re-validates your licence
+   approximately once per week.  If the server is unreachable, the locally
+   cached licence remains valid.
+
+4. THIRD-PARTY REVERSE GEOCODING (NOMINATIM)
    When the Software processes a geotagged photo, it sends the GPS
    coordinates (latitude and longitude only) to the Nominatim geocoding
    service operated by OpenStreetMap Foundation (openstreetmap.org) in order
@@ -126,19 +142,19 @@ Australian Privacy Act 1988 (Cth) and the Australian Privacy Principles.
    - If you do not wish GPS coordinates to be sent to Nominatim, do not
      process geotagged photos with this Software.
 
-4. NO ANALYTICS, ADVERTISING, OR TRACKING
+5. NO ANALYTICS, ADVERTISING, OR TRACKING
    The Software contains no analytics SDK, advertising SDK, crash-reporting
    service, or any form of tracking technology.
 
-5. CHILDREN
+6. CHILDREN
    The Software is not directed at children under 13.  We do not knowingly
    collect information from children.
 
-6. CHANGES TO THIS STATEMENT
+7. CHANGES TO THIS STATEMENT
    Any updates to this Privacy Statement will be included in future versions
    of the Software and announced on our website.
 
-7. CONTACT
+8. CONTACT
    If you have questions about this Privacy Statement:
    Email:  support@ggengage.com.au
    Web:    https://ggengage.com.au

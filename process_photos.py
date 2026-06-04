@@ -426,7 +426,12 @@ def _overlay(img: Image.Image, text: str, font_size: int = FONT_SIZE) -> Image.I
 
 def _process_photo(photo: Path, geolocator,
                    output_dir: Path | None = None,
-                   font_size: int = FONT_SIZE) -> str | None:
+                   font_size: int = FONT_SIZE,
+                   base_dir: Path | None = None) -> str | None:
+    """
+    Process one photo. When base_dir is set (recursive mode) the subfolder
+    structure below base_dir is mirrored inside output_dir.
+    """
     coords = _extract_gps(photo)
     if coords is None:
         return None
@@ -449,7 +454,16 @@ def _process_photo(photo: Path, geolocator,
     img = _resize(img)
     img = _overlay(img, loc_str, font_size)
 
-    out_dir = output_dir if output_dir is not None else photo.parent / "processed"
+    root = output_dir if output_dir is not None else (
+        base_dir / "processed" if base_dir else photo.parent / "processed")
+    if base_dir is not None:
+        try:
+            rel = photo.parent.relative_to(base_dir)
+            out_dir = root / rel
+        except ValueError:
+            out_dir = root
+    else:
+        out_dir = root
     out_dir.mkdir(exist_ok=True, parents=True)
     img.save(out_dir / (photo.stem + ".jpg"), "JPEG", quality=88, optimize=True)
     return loc_str
@@ -525,6 +539,19 @@ class App(tk.Tk):
                   bg="#3a3a3a", fg=FG, relief="flat",
                   activebackground=ACCENT, cursor="hand2",
                   font=("Segoe UI", 9)).pack(side="left")
+
+        sf_row = tk.Frame(in_frm, bg=BG)
+        sf_row.pack(fill="x", padx=10, pady=(0, 7))
+        self._subfolder_var = tk.BooleanVar(value=False)
+        self._subfolder_cb  = tk.Checkbutton(
+            sf_row,
+            text="Include subfolders  —  unlock with full license",
+            variable=self._subfolder_var,
+            bg=BG, fg="#555", selectcolor="#2b2b2b",
+            activebackground=BG, activeforeground=FG,
+            disabledforeground="#444",
+            font=("Segoe UI", 9), state="disabled", cursor="arrow")
+        self._subfolder_cb.pack(side="left")
 
         # ── Output section ───────────────────────────────────────────────────
         out_frm = tk.LabelFrame(self, text=" Output ", bg=BG, fg="#888",
@@ -696,13 +723,19 @@ class App(tk.Tk):
 
     def _refresh_status(self):
         if self.cfg["licensed"]:
-            self._status_var.set("Status: LICENSED — unlimited photos")
+            self._status_var.set("Status: LICENSED — unlimited photos & subfolders")
             self._lic_btn.config(text="Licensed", state="disabled", bg="#2e7d32")
+            self._subfolder_cb.config(
+                state="normal", fg=FG, cursor="hand2",
+                text="Include subfolders")
         else:
             left = max(0, FREE_LIMIT - self.cfg["photos_processed"])
             self._status_var.set(
                 f"Status: FREE TRIAL — {left} of {FREE_LIMIT} free photos remaining"
                 f"  (${PRICE_AUD} AUD to unlock)")
+            self._subfolder_cb.config(
+                state="disabled", fg="#555", cursor="arrow",
+                text="Include subfolders  —  unlock with full license")
 
     def _background_init(self):
         """Run at startup in a daemon thread — does NOT block the UI."""
@@ -738,10 +771,26 @@ class App(tk.Tk):
     def _start(self):
         inp = Path(self._input_var.get().strip())
 
+        recursive  = (self.cfg["licensed"] and self._subfolder_var.get())
+        out_str    = self._output_var.get().strip()
+        base_dir: Path | None = None
+
         if inp.is_dir():
-            photos      = sorted(p for p in inp.iterdir()
-                                 if p.is_file() and p.suffix.lower() in IMAGE_EXTS)
             default_out = inp / "processed"
+            output_dir  = Path(out_str) if out_str else default_out
+            out_prefix  = str(output_dir.resolve()) + os.sep
+
+            if recursive:
+                base_dir = inp
+                photos   = sorted(
+                    p for p in inp.rglob("*")
+                    if p.is_file()
+                    and p.suffix.lower() in IMAGE_EXTS
+                    and not str(p.resolve()).startswith(out_prefix))
+            else:
+                photos = sorted(p for p in inp.iterdir()
+                                if p.is_file() and p.suffix.lower() in IMAGE_EXTS)
+
             if not photos:
                 messagebox.showinfo("No images",
                                     "No image files found in that folder.")
@@ -749,14 +798,13 @@ class App(tk.Tk):
         elif inp.is_file() and inp.suffix.lower() in IMAGE_EXTS:
             photos      = [inp]
             default_out = inp.parent / "processed"
+            output_dir  = Path(out_str) if out_str else default_out
         else:
             messagebox.showerror("Error",
                                  f"Path not found or not a supported image:\n{inp}")
             return
 
-        out_str    = self._output_var.get().strip()
-        output_dir = Path(out_str) if out_str else default_out
-        font_size  = int(self._font_size_var.get())
+        font_size = int(self._font_size_var.get())
 
         if not self.cfg["licensed"]:
             remaining = FREE_LIMIT - self.cfg["photos_processed"]
@@ -782,16 +830,17 @@ class App(tk.Tk):
         self._bar["maximum"] = len(photos)
 
         threading.Thread(target=self._worker,
-                         args=(photos, output_dir, font_size),
+                         args=(photos, output_dir, font_size, base_dir),
                          daemon=True).start()
 
-    def _worker(self, photos, output_dir: Path, font_size: int):
+    def _worker(self, photos, output_dir: Path, font_size: int,
+                base_dir: Path | None = None):
         geo  = Nominatim(user_agent="gg-engage-photo-processor/1.0")
         done = 0
         for i, photo in enumerate(photos, 1):
             self.after(0, self._write_log, f"[{i}/{len(photos)}] {photo.name}")
             try:
-                loc = _process_photo(photo, geo, output_dir, font_size)
+                loc = _process_photo(photo, geo, output_dir, font_size, base_dir)
                 if loc is None:
                     self.after(0, self._write_log,
                                "  Warning: no GPS data — skipped")

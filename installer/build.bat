@@ -12,13 +12,13 @@ python --version >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Python not found.
     echo        Install Python 3.11+ from https://python.org
-    echo        Tick "Add Python to PATH" during install.
+    echo        Tick "Add Python to PATH" during setup.
     pause & exit /b 1
 )
 for /f "tokens=*" %%v in ('python --version') do echo Using %%v
 echo.
 
-REM ── Install / upgrade all Python dependencies ────────────────
+REM ── Install / upgrade Python dependencies ────────────────────
 echo [1/3] Installing Python dependencies...
 pip install --quiet --upgrade ^
     pyinstaller ^
@@ -38,10 +38,15 @@ REM ── Build standalone exe with PyInstaller ──────────�
 echo [2/3] Building standalone exe with PyInstaller...
 cd /d "%~dp0.."
 
+REM Use an icon if one exists at installer\icon.ico
+set ICON_ARG=
+if exist "%~dp0icon.ico" set ICON_ARG=--icon="%~dp0icon.ico"
+
 pyinstaller ^
     --onedir ^
     --windowed ^
     --name PhotoProcessor ^
+    %ICON_ARG% ^
     --hidden-import geopy.geocoders.nominatim ^
     --hidden-import geopy.geocoders ^
     --hidden-import PIL._tkinter_finder ^
@@ -65,7 +70,7 @@ if errorlevel 1 (
 echo       Done.  Output: dist\PhotoProcessor\
 echo.
 
-REM ── Build installer with Inno Setup ──────────────────────────
+REM ── Build installer with Inno Setup 6 ────────────────────────
 echo [3/3] Building installer with Inno Setup 6...
 
 set ISCC=
@@ -96,6 +101,10 @@ echo ============================================================
 echo  BUILD COMPLETE
 echo.
 echo  Installer: installer\Output\GGEngagePhotoProcessor_Setup_v1.0.0.exe
+echo.
+echo  To build a new license key:
+echo    cd installer
+echo    python keygen.py 1
 echo.
 echo  REMINDER: Never distribute server\ or installer\keygen.py
 echo ============================================================
