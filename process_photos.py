@@ -34,7 +34,7 @@ import webbrowser
 
 import requests
 import piexif
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageTk
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
@@ -408,11 +408,11 @@ def _load_font(size: int) -> ImageFont.ImageFont:
     return ImageFont.load_default()
 
 
-def _overlay(img: Image.Image, text: str) -> Image.Image:
+def _overlay(img: Image.Image, text: str, font_size: int = FONT_SIZE) -> Image.Image:
     img   = img.convert("RGBA")
     layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw  = ImageDraw.Draw(layer)
-    font  = _load_font(FONT_SIZE)
+    font  = _load_font(font_size)
     bbox  = draw.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
     iw, ih = img.size
@@ -424,7 +424,9 @@ def _overlay(img: Image.Image, text: str) -> Image.Image:
     return Image.alpha_composite(img, layer).convert("RGB")
 
 
-def _process_photo(photo: Path, geolocator) -> str | None:
+def _process_photo(photo: Path, geolocator,
+                   output_dir: Path | None = None,
+                   font_size: int = FONT_SIZE) -> str | None:
     coords = _extract_gps(photo)
     if coords is None:
         return None
@@ -445,10 +447,10 @@ def _process_photo(photo: Path, geolocator) -> str | None:
         pass
 
     img = _resize(img)
-    img = _overlay(img, loc_str)
+    img = _overlay(img, loc_str, font_size)
 
-    out_dir = photo.parent / "processed"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = output_dir if output_dir is not None else photo.parent / "processed"
+    out_dir.mkdir(exist_ok=True, parents=True)
     img.save(out_dir / (photo.stem + ".jpg"), "JPEG", quality=88, optimize=True)
     return loc_str
 
@@ -475,10 +477,12 @@ class App(tk.Tk):
                  start_folder: str | None = None):
         super().__init__()
         self.title(APP_NAME)
-        self.geometry("640x540")
-        self.resizable(False, False)
+        self.geometry("700x720")
+        self.resizable(True, True)
+        self.minsize(580, 600)
         self.configure(bg=BG)
 
+        self._start_folder = start_folder
         self.cfg = _load_config()
         self._hw_fingerprint: str | None = None   # computed lazily in bg thread
         self._build_ui()
@@ -494,37 +498,103 @@ class App(tk.Tk):
     # ── UI ───────────────────────────────────────────────────────────────────
 
     def _build_ui(self):
+        # ── Header ──────────────────────────────────────────────────────────
         tk.Label(self, text=APP_NAME, font=("Segoe UI", 15, "bold"),
-                 bg=BG, fg=ACCENT).pack(pady=(16, 2))
+                 bg=BG, fg=ACCENT).pack(pady=(14, 2))
         tk.Label(self, text=f"Version {APP_VERSION}  ·  GG Engage",
                  font=("Segoe UI", 9), bg=BG, fg="#777").pack()
 
-        row = tk.Frame(self, bg=BG)
-        row.pack(fill="x", padx=14, pady=8)
-        tk.Label(row, text="Photo folder:", bg=BG, fg=FG,
-                 font=("Segoe UI", 10)).pack(side="left")
-        self._folder = tk.StringVar(value=start_folder or _default_folder())
-        tk.Entry(row, textvariable=self._folder, width=44,
-                 bg="#2b2b2b", fg=FG, insertbackground=FG,
-                 relief="flat", font=("Segoe UI", 9)).pack(side="left", padx=6)
-        tk.Button(row, text="Browse…", command=self._browse,
-                  bg="#3a3a3a", fg=FG, relief="flat",
-                  activebackground=ACCENT, cursor="hand2").pack(side="left")
+        # ── Input section ────────────────────────────────────────────────────
+        in_frm = tk.LabelFrame(self, text=" Input ", bg=BG, fg="#888",
+                               font=("Segoe UI", 9), labelanchor="nw",
+                               relief="groove", bd=1)
+        in_frm.pack(fill="x", padx=14, pady=(10, 4))
+        in_row = tk.Frame(in_frm, bg=BG)
+        in_row.pack(fill="x", padx=8, pady=8)
 
+        self._input_var = tk.StringVar(value=self._start_folder or _default_folder())
+        tk.Entry(in_row, textvariable=self._input_var, bg="#2b2b2b", fg=FG,
+                 insertbackground=FG, relief="flat",
+                 font=("Segoe UI", 9)).pack(side="left", fill="x", expand=True,
+                                             padx=(0, 6))
+        tk.Button(in_row, text="Browse Folder", command=self._browse_folder,
+                  bg="#3a3a3a", fg=FG, relief="flat",
+                  activebackground=ACCENT, cursor="hand2",
+                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
+        tk.Button(in_row, text="Browse File", command=self._browse_file,
+                  bg="#3a3a3a", fg=FG, relief="flat",
+                  activebackground=ACCENT, cursor="hand2",
+                  font=("Segoe UI", 9)).pack(side="left")
+
+        # ── Output section ───────────────────────────────────────────────────
+        out_frm = tk.LabelFrame(self, text=" Output ", bg=BG, fg="#888",
+                                font=("Segoe UI", 9), labelanchor="nw",
+                                relief="groove", bd=1)
+        out_frm.pack(fill="x", padx=14, pady=4)
+        out_row = tk.Frame(out_frm, bg=BG)
+        out_row.pack(fill="x", padx=8, pady=8)
+
+        self._output_var = tk.StringVar()
+        self._set_default_output()
+        self._input_var.trace_add("write", self._on_input_changed)
+
+        tk.Entry(out_row, textvariable=self._output_var, bg="#2b2b2b", fg=FG,
+                 insertbackground=FG, relief="flat",
+                 font=("Segoe UI", 9)).pack(side="left", fill="x", expand=True,
+                                             padx=(0, 6))
+        tk.Button(out_row, text="Browse Output", command=self._browse_output,
+                  bg="#3a3a3a", fg=FG, relief="flat",
+                  activebackground=ACCENT, cursor="hand2",
+                  font=("Segoe UI", 9)).pack(side="left")
+
+        # ── Location Label section ───────────────────────────────────────────
+        lbl_frm = tk.LabelFrame(self, text=" Location Label ", bg=BG, fg="#888",
+                                font=("Segoe UI", 9), labelanchor="nw",
+                                relief="groove", bd=1)
+        lbl_frm.pack(fill="x", padx=14, pady=4)
+
+        slider_row = tk.Frame(lbl_frm, bg=BG)
+        slider_row.pack(fill="x", padx=8, pady=(8, 4))
+        tk.Label(slider_row, text="Smaller", bg=BG, fg="#888",
+                 font=("Segoe UI", 9)).pack(side="left")
+
+        self._font_size_var = tk.IntVar(value=FONT_SIZE)
+        tk.Scale(slider_row, from_=8, to=64, orient="horizontal",
+                 variable=self._font_size_var, showvalue=False,
+                 bg=BG, fg=FG, troughcolor="#2b2b2b",
+                 highlightthickness=0, activebackground=ACCENT,
+                 command=self._update_preview).pack(side="left", fill="x",
+                                                    expand=True, padx=8)
+        tk.Label(slider_row, text="Larger", bg=BG, fg="#888",
+                 font=("Segoe UI", 9)).pack(side="left")
+        self._size_lbl = tk.Label(slider_row, text=f"{FONT_SIZE} px",
+                                  bg=BG, fg=ACCENT,
+                                  font=("Segoe UI", 9, "bold"), width=6)
+        self._size_lbl.pack(side="left", padx=(8, 0))
+
+        self._preview_canvas = tk.Canvas(lbl_frm, bg="#333",
+                                         highlightthickness=0, height=160)
+        self._preview_canvas.pack(fill="x", padx=8, pady=(0, 8))
+        self._preview_photo = None
+        self._preview_canvas.bind("<Configure>", self._update_preview)
+
+        # ── Status ───────────────────────────────────────────────────────────
         self._status_var = tk.StringVar()
         tk.Label(self, textvariable=self._status_var,
-                 font=("Segoe UI", 10, "bold"), bg=BG, fg=ACCENT).pack(pady=2)
+                 font=("Segoe UI", 10, "bold"), bg=BG, fg=ACCENT).pack(pady=(6, 2))
 
-        lf = tk.Frame(self, bg=BG)
-        lf.pack(fill="both", expand=True, padx=14)
-        sb = tk.Scrollbar(lf)
+        # ── Log ──────────────────────────────────────────────────────────────
+        log_frm = tk.Frame(self, bg=BG)
+        log_frm.pack(fill="both", expand=True, padx=14)
+        sb = tk.Scrollbar(log_frm)
         sb.pack(side="right", fill="y")
-        self._log = tk.Text(lf, height=14, bg="#252525", fg=FG,
+        self._log = tk.Text(log_frm, height=7, bg="#252525", fg=FG,
                             font=("Consolas", 9), relief="flat",
                             yscrollcommand=sb.set, state="disabled")
         self._log.pack(side="left", fill="both", expand=True)
         sb.config(command=self._log.yview)
 
+        # ── Progress + buttons ───────────────────────────────────────────────
         self._bar = ttk.Progressbar(self, mode="determinate")
         self._bar.pack(fill="x", padx=14, pady=4)
 
@@ -544,13 +614,79 @@ class App(tk.Tk):
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
-    def _browse(self):
-        # Start the dialog at whatever path is already in the box (or home if invalid)
-        current = self._folder.get().strip()
+    def _set_default_output(self):
+        inp = self._input_var.get().strip()
+        if not inp:
+            self._output_var.set("")
+            return
+        p = Path(inp)
+        base = p if p.is_dir() else p.parent
+        self._output_var.set(str(base / "processed"))
+
+    def _on_input_changed(self, *_):
+        out = self._output_var.get()
+        norm = out.replace("\\", "/")
+        if not out or norm.endswith("/processed"):
+            self._set_default_output()
+
+    def _browse_folder(self):
+        current = self._input_var.get().strip()
         start   = current if Path(current).is_dir() else str(Path.home())
         d = filedialog.askdirectory(title="Select photo folder", initialdir=start)
         if d:
-            self._folder.set(d)
+            self._input_var.set(d)
+
+    def _browse_file(self):
+        current = self._input_var.get().strip()
+        cur_p   = Path(current)
+        start   = (str(cur_p) if cur_p.is_dir()
+                   else str(cur_p.parent) if cur_p.parent.is_dir()
+                   else str(Path.home()))
+        exts    = " ".join(f"*{e}" for e in sorted(IMAGE_EXTS))
+        f = filedialog.askopenfilename(
+            title="Select a photo",
+            initialdir=start,
+            filetypes=[("Image files", exts), ("All files", "*.*")])
+        if f:
+            self._input_var.set(f)
+
+    def _browse_output(self):
+        current = self._output_var.get().strip()
+        cur_p   = Path(current)
+        start   = (str(cur_p) if cur_p.is_dir()
+                   else str(cur_p.parent) if cur_p.parent.is_dir()
+                   else str(Path.home()))
+        d = filedialog.askdirectory(title="Select output folder", initialdir=start)
+        if d:
+            self._output_var.set(d)
+
+    def _update_preview(self, *_):
+        size = int(self._font_size_var.get())
+        self._size_lbl.config(text=f"{size} px")
+
+        w = self._preview_canvas.winfo_width()
+        h = self._preview_canvas.winfo_height()
+        if w < 20 or h < 20:
+            return
+
+        # Synthetic landscape background
+        img  = Image.new("RGB", (w, h))
+        draw = ImageDraw.Draw(img)
+        sky_bottom = h * 2 // 3
+        for y in range(sky_bottom):
+            ratio = y / max(1, sky_bottom)
+            draw.line([(0, y), (w, y)],
+                      fill=(int(70 + ratio * 50),
+                            int(130 + ratio * 20),
+                            int(180 - ratio * 30)))
+        draw.rectangle([0, sky_bottom, w, h], fill=(70, 100, 55))
+
+        img = _overlay(img, "Sydney, Australia", size)
+
+        self._preview_photo = ImageTk.PhotoImage(img)
+        self._preview_canvas.delete("all")
+        self._preview_canvas.create_image(0, 0, anchor="nw",
+                                          image=self._preview_photo)
 
     def _write_log(self, msg: str):
         self._log.config(state="normal")
@@ -600,17 +736,27 @@ class App(tk.Tk):
     # ── Processing ───────────────────────────────────────────────────────────
 
     def _start(self):
-        folder = Path(self._folder.get())
-        if not folder.is_dir():
-            messagebox.showerror("Error", f"Folder not found:\n{folder}")
+        inp = Path(self._input_var.get().strip())
+
+        if inp.is_dir():
+            photos      = sorted(p for p in inp.iterdir()
+                                 if p.is_file() and p.suffix.lower() in IMAGE_EXTS)
+            default_out = inp / "processed"
+            if not photos:
+                messagebox.showinfo("No images",
+                                    "No image files found in that folder.")
+                return
+        elif inp.is_file() and inp.suffix.lower() in IMAGE_EXTS:
+            photos      = [inp]
+            default_out = inp.parent / "processed"
+        else:
+            messagebox.showerror("Error",
+                                 f"Path not found or not a supported image:\n{inp}")
             return
 
-        photos = sorted(p for p in folder.iterdir()
-                        if p.is_file() and p.suffix.lower() in IMAGE_EXTS)
-        if not photos:
-            messagebox.showinfo("No images",
-                                "No image files found in that folder.")
-            return
+        out_str    = self._output_var.get().strip()
+        output_dir = Path(out_str) if out_str else default_out
+        font_size  = int(self._font_size_var.get())
 
         if not self.cfg["licensed"]:
             remaining = FREE_LIMIT - self.cfg["photos_processed"]
@@ -635,15 +781,17 @@ class App(tk.Tk):
         self._bar["value"]   = 0
         self._bar["maximum"] = len(photos)
 
-        threading.Thread(target=self._worker, args=(photos,), daemon=True).start()
+        threading.Thread(target=self._worker,
+                         args=(photos, output_dir, font_size),
+                         daemon=True).start()
 
-    def _worker(self, photos):
+    def _worker(self, photos, output_dir: Path, font_size: int):
         geo  = Nominatim(user_agent="gg-engage-photo-processor/1.0")
         done = 0
         for i, photo in enumerate(photos, 1):
             self.after(0, self._write_log, f"[{i}/{len(photos)}] {photo.name}")
             try:
-                loc = _process_photo(photo, geo)
+                loc = _process_photo(photo, geo, output_dir, font_size)
                 if loc is None:
                     self.after(0, self._write_log,
                                "  Warning: no GPS data — skipped")
@@ -655,17 +803,16 @@ class App(tk.Tk):
             except Exception as exc:
                 self.after(0, self._write_log, f"  Error: {exc}")
             self.after(0, self._tick, i)
-        self.after(0, self._finished, done, len(photos))
+        self.after(0, self._finished, done, len(photos), output_dir)
 
     def _tick(self, n: int):
         self._bar["value"] = n
         self._refresh_status()
 
-    def _finished(self, done: int, total: int):
+    def _finished(self, done: int, total: int, output_dir: Path):
         self._proc_btn.config(state="normal")
         self._refresh_status()
-        out = Path(self._folder.get()) / "processed"
-        self._write_log(f"\nFinished: {done}/{total} photos saved to:\n{out}")
+        self._write_log(f"\nFinished: {done}/{total} photos saved to:\n{output_dir}")
         if not self.cfg["licensed"] and \
                 self.cfg["photos_processed"] >= FREE_LIMIT:
             self._prompt_purchase()
