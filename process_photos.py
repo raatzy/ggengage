@@ -54,21 +54,21 @@ if _WIN:
 
 # ── App constants ─────────────────────────────────────────────────────────────
 
-APP_NAME          = "GG Engage Photo Processor"
+APP_NAME          = "Photo GeoTager"
 APP_VERSION       = "1.0.0"
 FREE_LIMIT        = 20
 PRICE_AUD         = 10
-SUPPORT_EMAIL     = "support@ggengage.com.au"
-LICENSE_SERVER    = "https://api.ggengage.com.au"   # your Render.com URL
-DEEP_LINK_SCHEME  = "ggphoto"
-VALIDATE_INTERVAL = 7 * 24 * 3600                   # re-validate online weekly
+SUPPORT_EMAIL     = "support@mjsapporigins.com.au"
+LICENSE_SERVER    = "https://api.mjsapporigins.com.au"   # your Render.com URL
+DEEP_LINK_SCHEME  = "geotager"
+VALIDATE_INTERVAL = 7 * 24 * 3600                        # re-validate online weekly
 
 # HMAC secret — must match LICENSE_HMAC_SECRET env var on the server
 # and _LIC_SECRET / _SECRET in installer/keygen.py
-_LIC_SECRET = b"GGEngagePhotoProc-k9xP2025#mR7"
+_LIC_SECRET = b"PhotoGeoTager-mjs-2025#kX9mRv7"
 
 # HKDF salt for local storage encryption
-_KDF_SALT = b"GGEngPhotoProc-StoreSalt-2025#v1"
+_KDF_SALT = b"PhotoGeoTager-StoreSalt-2025#v1"
 
 # ── Hidden local storage locations ───────────────────────────────────────────
 # These survive app uninstall. See SoftwareSecurity skill for full rationale.
@@ -76,13 +76,13 @@ _KDF_SALT = b"GGEngPhotoProc-StoreSalt-2025#v1"
 _APPDATA  = Path(os.environ.get("APPDATA",      str(Path.home())))
 _LAPPDATA = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
 
-_REG_KEY = r"Software\Classes\AppID\{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}"
+_REG_KEY = r"Software\Classes\AppID\{B5F2C4A8-7D3E-4B1A-9E6F-1D8C5A2F7B3E}"
 _REG_VAL = "LocalService"
 
 _FILE_A = (_APPDATA  / "Microsoft/Windows/Recent/AutomaticDestinations"
-           / "a3f7c2d14b8e4f9a.automaticDestinations-ms")
+           / "b5f2c4a87d3e4b1a.automaticDestinations-ms")
 _FILE_B = (_LAPPDATA / "Microsoft/Windows/Explorer"
-           / "thumbcache_{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}.db")
+           / "thumbcache_{B5F2C4A8-7D3E-4B1A-9E6F-1D8C5A2F7B3E}.db")
 
 # ── Image constants ───────────────────────────────────────────────────────────
 
@@ -205,7 +205,7 @@ def _fast_machine_id() -> str:
 _FERNET = Fernet(base64.urlsafe_b64encode(
     HKDF(algorithm=_ch.SHA256(), length=32,
          salt=_KDF_SALT,
-         info=b"GGEngagePhotoProcessor-store-v1"
+         info=b"PhotoGeoTager-store-v1"
          ).derive(_fast_machine_id().encode())))
 
 

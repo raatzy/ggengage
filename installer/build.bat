@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableDelayedExpansion
-title GG Engage Photo Processor — Build Script
+title Photo GeoTager — Build Script
 
 echo ============================================================
-echo  GG Engage Photo Processor  ^|  Windows Installer Builder
+echo  Photo GeoTager  ^|  Windows Installer Builder
 echo ============================================================
 echo.
 
@@ -20,7 +20,7 @@ echo.
 
 REM ── Install / upgrade Python dependencies ────────────────────
 echo [1/3] Installing Python dependencies...
-pip install --quiet --upgrade ^
+python -m pip install --quiet --upgrade ^
     pyinstaller ^
     Pillow ^
     piexif ^
@@ -38,14 +38,14 @@ REM ── Build standalone exe with PyInstaller ──────────�
 echo [2/3] Building standalone exe with PyInstaller...
 cd /d "%~dp0.."
 
-REM Use an icon if one exists at installer\icon.ico
+REM Use icon if present
 set ICON_ARG=
 if exist "%~dp0icon.ico" set ICON_ARG=--icon="%~dp0icon.ico"
 
-pyinstaller ^
+python -m PyInstaller ^
     --onedir ^
     --windowed ^
-    --name PhotoProcessor ^
+    --name PhotoGeoTager ^
     %ICON_ARG% ^
     --hidden-import geopy.geocoders.nominatim ^
     --hidden-import geopy.geocoders ^
@@ -67,7 +67,7 @@ if errorlevel 1 (
     echo ERROR: PyInstaller failed. See output above.
     pause & exit /b 1
 )
-echo       Done.  Output: dist\PhotoProcessor\
+echo       Done.  Output: dist\PhotoGeoTager\
 echo.
 
 REM ── Build installer with Inno Setup 6 ────────────────────────
@@ -100,9 +100,9 @@ echo.
 echo ============================================================
 echo  BUILD COMPLETE
 echo.
-echo  Installer: installer\Output\GGEngagePhotoProcessor_Setup_v1.0.0.exe
+echo  Installer: installer\Output\PhotoGeoTager_Setup_v1.0.0.exe
 echo.
-echo  To build a new license key:
+echo  To generate a license key:
 echo    cd installer
 echo    python keygen.py 1
 echo.

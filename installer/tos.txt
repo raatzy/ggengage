@@ -1,4 +1,4 @@
-GG ENGAGE PHOTO PROCESSOR
+PHOTO GEOTAGER
 TERMS OF SERVICE AND PRIVACY STATEMENT
 Version 1.0  |  Effective: 1 June 2025
 ================================================================================
@@ -12,9 +12,9 @@ PART A — TERMS OF SERVICE
 ================================================================================
 
 1. DEFINITIONS
-   "Software" means GG Engage Photo Processor and all associated files
+   "Software" means Photo GeoTager and all associated files
    installed on your computer.
-   "Licensor" means GG Engage, operated by the publisher of this Software.
+   "Licensor" means MJS App Origins, operated by the publisher of this Software.
    "You" means the individual who installs or uses the Software.
 
 2. GRANT OF LICENCE
@@ -82,14 +82,14 @@ PART A — TERMS OF SERVICE
 
 11. CONTACT
     For support, licence key requests, or other enquiries:
-    Email:  support@ggengage.com.au
-    Web:    https://ggengage.com.au
+    Email:  support@mjsapporigins.com.au
+    Web:    https://mjsapporigins.com.au
 
 
 PART B — PRIVACY STATEMENT
 ================================================================================
 
-GG Engage is committed to protecting your privacy.  This Privacy Statement
+MJS App Origins is committed to protecting your privacy.  This Privacy Statement
 explains how the Software handles information in accordance with the
 Australian Privacy Act 1988 (Cth) and the Australian Privacy Principles.
 
@@ -113,7 +113,7 @@ Australian Privacy Act 1988 (Cth) and the Australian Privacy Principles.
 
 3. LICENCE ACTIVATION (LICENSED USERS ONLY)
    When you activate a licence key, the Software sends the following to the
-   GG Engage licence server (api.ggengage.com.au) over HTTPS:
+   MJS App Origins licence server (api.mjsapporigins.com.au) over HTTPS:
 
    - Your licence key.
    - A one-way SHA-256 hash derived from hardware identifiers on this
@@ -156,8 +156,8 @@ Australian Privacy Act 1988 (Cth) and the Australian Privacy Principles.
 
 8. CONTACT
    If you have questions about this Privacy Statement:
-   Email:  support@ggengage.com.au
-   Web:    https://ggengage.com.au
+   Email:  support@mjsapporigins.com.au
+   Web:    https://mjsapporigins.com.au
 
 ================================================================================
 END OF TERMS OF SERVICE AND PRIVACY STATEMENT

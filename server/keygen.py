@@ -19,7 +19,7 @@ import secrets
 
 # Must match _LIC_SECRET in process_photos.py and installer/keygen.py
 _SECRET: bytes = os.environ.get(
-    "LICENSE_HMAC_SECRET", "GGEngagePhotoProc-k9xP2025#mR7"
+    "LICENSE_HMAC_SECRET", "PhotoGeoTager-mjs-2025#kX9mRv7"
 ).encode()
 
 

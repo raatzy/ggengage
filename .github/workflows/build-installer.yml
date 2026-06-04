@@ -34,10 +34,10 @@ jobs:
       # ── 3. PyInstaller ───────────────────────────────────────────────────────
       - name: Build exe with PyInstaller
         run: |
-          pyinstaller `
+          python -m PyInstaller `
             --onedir `
             --windowed `
-            --name PhotoProcessor `
+            --name PhotoGeoTager `
             --hidden-import geopy.geocoders.nominatim `
             --hidden-import geopy.geocoders `
             --hidden-import PIL._tkinter_finder `
@@ -66,6 +66,6 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: GGEngagePhotoProcessor-Setup
+          name: PhotoGeoTager-Setup
           path: installer\Output\*.exe
           retention-days: 90

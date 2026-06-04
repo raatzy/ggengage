@@ -1,5 +1,5 @@
 """
-GG Engage Photo Processor — License Server
+Photo GeoTager — License Server
 ==========================================
 Endpoints
   POST /api/webhook/stripe          Stripe payment → generate key + email
@@ -43,14 +43,14 @@ STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 ADMIN_API_KEY         = os.environ.get("ADMIN_API_KEY", "")
 
 limiter = Limiter(key_func=get_remote_address)
-app     = FastAPI(title="GG Engage License Server",
+app     = FastAPI(title="MJS App Origins License Server",
                   docs_url=None, redoc_url=None)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ggengage.com.au", "https://www.ggengage.com.au"],
+    allow_origins=["https://mjsapporigins.com.au", "https://www.ggengage.com.au"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"])
 
@@ -172,7 +172,7 @@ async def activate(request: Request, body: ActivateBody,
     if record.is_revoked:
         return JSONResponse({"success": False, "conflict": False,
                              "message": "This license has been revoked. "
-                                        "Contact support@ggengage.com.au for help."})
+                                        "Contact support@mjsapporigins.com.au for help."})
 
     if not record.is_activated:
         db_module.activate_license(db, record, fingerprint)
@@ -316,7 +316,7 @@ async def support_ticket(request: Request, body: SupportTicketBody,
     return JSONResponse({"success": True,
                          "ticket_ref": ticket_ref,
                          "message": (f"Support ticket {ticket_ref} has been logged.\n\n"
-                                     f"Please also send an email to support@ggengage.com.au "
+                                     f"Please also send an email to support@mjsapporigins.com.au "
                                      f"— your email client will open pre-filled.\n\n"
                                      f"We aim to process transfer requests within "
                                      f"1 business day.")})

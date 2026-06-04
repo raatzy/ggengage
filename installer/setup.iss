@@ -1,31 +1,31 @@
-; GG Engage Photo Processor — Inno Setup 6 Script
+; Photo GeoTager — Inno Setup 6 Script
 ; Requirements: Inno Setup 6.3+  https://jrsoftware.org/isdl.php
 ; Run:  ISCC.exe setup.iss  (from installer\ directory)
 
-#define AppName      "GG Engage Photo Processor"
+#define AppName      "Photo GeoTager"
 #define AppVersion   "1.0.0"
-#define AppPublisher "GG Engage"
-#define AppURL       "https://ggengage.com.au"
-#define AppExe       "PhotoProcessor.exe"
-#define SourceDir    "..\dist\PhotoProcessor"
-#define DeepLink     "ggphoto"
+#define AppPublisher "MJS App Origins"
+#define AppURL       "https://mjsapporigins.com.au"
+#define AppExe       "PhotoGeoTager.exe"
+#define SourceDir    "..\dist\PhotoGeoTager"
+#define DeepLink     "geotager"
 
 ; ── Setup metadata ────────────────────────────────────────────────────────────
 [Setup]
-AppId={{A3F7C2D1-4B8E-4F9A-9C0D-2E5B7A3F8C1D}
+AppId={{C6A3D5E9-8F4B-4C2D-7E1A-2B9D6F3E8C4A}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
 AppPublisherURL={#AppURL}
-AppSupportURL=mailto:support@ggengage.com.au
+AppSupportURL=mailto:support@mjsapporigins.com.au
 AppUpdatesURL={#AppURL}
-DefaultDirName={localappdata}\GGEngagePhotoProcessor
+DefaultDirName={localappdata}\PhotoGeoTager
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 LicenseFile=tos.txt
 OutputDir=Output
-OutputBaseFilename=GGEngagePhotoProcessor_Setup_v{#AppVersion}
+OutputBaseFilename=PhotoGeoTager_Setup_v{#AppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -59,13 +59,12 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\{#AppName}";   Filename: "{app}\{#AppExe}"; \
   Tasks: desktopicon
 
-; ── Deep-link URL scheme: ggphoto://activate/<key> ───────────────────────────
-; Clicking "Activate Now" in the license email opens the app directly
-; with the key pre-filled, so the customer never has to type it.
+; ── Deep-link URL scheme: geotager://activate/<key> ──────────────────────────
+; Clicking "Activate Now" in the licence email opens the app directly.
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\{#DeepLink}"; \
   ValueType: string; ValueName: ""; \
-  ValueData: "GG Engage Photo Processor"; \
+  ValueData: "Photo GeoTager"; \
   Flags: uninsdeletekey
 
 Root: HKCU; Subkey: "Software\Classes\{#DeepLink}"; \
@@ -86,7 +85,7 @@ Filename: "{app}\{#AppExe}"; \
   Flags: nowait postinstall skipifsilent
 
 ; ── Uninstall note ────────────────────────────────────────────────────────────
-; The three hidden license/trial storage locations (registry COM key, jump-list
-; file, Explorer cache file) are intentionally NOT removed on uninstall so that
-; reinstalling the app cannot reset the free trial counter.
-; The ggphoto:// URL scheme IS removed (Flags: uninsdeletekey above).
+; The three hidden licence/trial storage locations (registry key, jump-list
+; file, Explorer cache file) are intentionally NOT removed on uninstall so
+; that reinstalling cannot reset the free-trial counter.
+; The geotager:// URL scheme IS removed (Flags: uninsdeletekey above).

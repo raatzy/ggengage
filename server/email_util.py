@@ -16,11 +16,11 @@ SMTP_PORT  = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER  = os.environ.get("SMTP_USER",  "")
 SMTP_PASS  = os.environ.get("SMTP_PASS",  "")
 FROM_EMAIL = os.environ.get("FROM_EMAIL", SMTP_USER)
-FROM_NAME  = os.environ.get("FROM_NAME",  "GG Engage")
-SUPPORT    = "support@ggengage.com.au"
-WEBSITE    = "https://ggengage.com.au"
-APP_NAME   = "GG Engage Photo Processor"
-DEEP_LINK  = "ggphoto"
+FROM_NAME  = os.environ.get("FROM_NAME",  "MJS App Origins")
+SUPPORT    = "support@mjsapporigins.com.au"
+WEBSITE    = "https://mjsapporigins.com.au"
+APP_NAME   = "Photo GeoTager"
+DEEP_LINK  = "geotager"
 
 
 def _send(to: str, subject: str, html: str, plain: str) -> bool:
@@ -63,7 +63,7 @@ def send_license_email(to: str, name: str, key: str, receipt_url: str = "") -> b
        style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
   <tr><td style="background:#1e1e1e;padding:28px 40px;text-align:center;">
     <h1 style="color:#4caf50;margin:0;font-size:22px;">{APP_NAME}</h1>
-    <p style="color:#aaa;margin:6px 0 0;font-size:13px;">GG Engage</p>
+    <p style="color:#aaa;margin:6px 0 0;font-size:13px;">MJS App Origins</p>
   </td></tr>
   <tr><td style="padding:36px 40px;color:#333;font-size:15px;line-height:1.6;">
     <p>Hi {fn},</p>
@@ -93,7 +93,7 @@ def send_license_email(to: str, name: str, key: str, receipt_url: str = "") -> b
   </td></tr>
   <tr><td style="background:#f8f8f8;padding:20px 40px;text-align:center;
                  font-size:12px;color:#aaa;">
-    &copy; GG Engage &nbsp;&middot;&nbsp;
+    &copy; MJS App Origins &nbsp;&middot;&nbsp;
     <a href="{WEBSITE}" style="color:#4caf50;text-decoration:none;">{WEBSITE}</a>
     &nbsp;&middot;&nbsp;
     <a href="mailto:{SUPPORT}" style="color:#4caf50;text-decoration:none;">{SUPPORT}</a>
@@ -103,7 +103,7 @@ def send_license_email(to: str, name: str, key: str, receipt_url: str = "") -> b
     plain = (f"Hi {fn},\n\nYour license key is:\n\n  {key}\n\n"
              f"Open the app and click 'Enter License Key' to activate.\n"
              + (f"Receipt: {receipt_url}\n" if receipt_url else "")
-             + f"\n-- GG Engage\n{WEBSITE}")
+             + f"\n-- MJS App Origins\n{WEBSITE}")
 
     return _send(to, f"Your {APP_NAME} License Key", html, plain)
 
@@ -140,14 +140,14 @@ def send_transfer_code_email(to: str, name: str, code: str) -> bool:
   </td></tr>
   <tr><td style="background:#f8f8f8;padding:16px 40px;text-align:center;
                  font-size:12px;color:#aaa;">
-    &copy; GG Engage &nbsp;&middot;&nbsp;
+    &copy; MJS App Origins &nbsp;&middot;&nbsp;
     <a href="mailto:{SUPPORT}" style="color:#4caf50;text-decoration:none;">{SUPPORT}</a>
   </td></tr>
 </table></td></tr></table></body></html>"""
 
     plain = (f"Hi {fn},\n\nYour transfer verification code is:\n\n"
              f"  {code}\n\nExpires in 15 minutes.\n\n"
-             f"If you did not request this, contact {SUPPORT}.\n\n-- GG Engage")
+             f"If you did not request this, contact {SUPPORT}.\n\n-- MJS App Origins")
 
     return _send(to, f"{APP_NAME} — Transfer Verification Code", html, plain)
 

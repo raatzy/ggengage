@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(C:\\Users\\mjraa\\OneDrive\\Claude\\GeoTag Photo\\**)",
+      "Write(C:\\Users\\mjraa\\OneDrive\\Claude\\GeoTag Photo\\**)",
+      "Edit(C:\\Users\\mjraa\\OneDrive\\Claude\\GeoTag Photo\\**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\mjraa\\OneDrive\\Claude\\GeoTag Photo"
+    ]
+  }
+}

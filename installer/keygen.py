@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GG Engage Photo Processor — Developer License Key Generator
+Photo GeoTager — Developer License Key Generator
 ============================================================
 DO NOT DISTRIBUTE THIS FILE. Keep it private on your own machine.
 It contains the same secrets as the compiled application.
@@ -22,7 +22,7 @@ import secrets
 import sys
 
 # Must exactly match _LIC_SECRET in process_photos.py
-_SECRET = b"GGEngagePhotoProc-k9xP2025#mR7"
+_SECRET = b"PhotoGeoTager-mjs-2025#kX9mRv7"
 
 
 def generate_key() -> str:
@@ -46,7 +46,7 @@ def validate_key(key: str) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate or validate GG Engage Photo Processor license keys.")
+        description="Generate or validate Photo GeoTager license keys.")
     parser.add_argument("count", nargs="?", type=int, default=1,
                         help="Number of keys to generate (default: 1)")
     parser.add_argument("--validate", metavar="KEY",
