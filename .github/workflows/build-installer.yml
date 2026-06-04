@@ -1,0 +1,71 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches: [ "claude/geotagged-photo-processor-eLvaD" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Python ────────────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade `
+            pyinstaller `
+            Pillow `
+            piexif `
+            geopy `
+            cryptography `
+            requests
+
+      # ── 3. PyInstaller ───────────────────────────────────────────────────────
+      - name: Build exe with PyInstaller
+        run: |
+          pyinstaller `
+            --onedir `
+            --windowed `
+            --name PhotoProcessor `
+            --hidden-import geopy.geocoders.nominatim `
+            --hidden-import geopy.geocoders `
+            --hidden-import PIL._tkinter_finder `
+            --hidden-import piexif `
+            --hidden-import winreg `
+            --hidden-import cryptography `
+            --hidden-import cryptography.fernet `
+            --hidden-import cryptography.hazmat.primitives.kdf.hkdf `
+            --hidden-import cryptography.hazmat.primitives.hashes `
+            --hidden-import cryptography.hazmat.backends `
+            --hidden-import requests `
+            --hidden-import urllib3 `
+            --clean `
+            --noconfirm `
+            process_photos.py
+
+      # ── 4. Inno Setup ────────────────────────────────────────────────────────
+      - name: Install Inno Setup 6
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\setup.iss
+
+      # ── 5. Upload ─────────────────────────────────────────────────────────────
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: GGEngagePhotoProcessor-Setup
+          path: installer\Output\*.exe
+          retention-days: 90
