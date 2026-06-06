@@ -12,18 +12,16 @@
       --border:   #272b3a;
       --text:     #e2e6f0;
       --muted:    #6b7192;
-      --fiber:    #ff6b2b;
-      --fiber-bg: rgba(255,107,43,0.08);
-      --fiber-bd: rgba(255,107,43,0.35);
-      --ir:       #b64fff;
-      --ir-bg:    rgba(182,79,255,0.08);
-      --ir-bd:    rgba(182,79,255,0.35);
-      --warn:     #ffb347;
+      --diode:    #3b9eff;
+      --diode-bg: rgba(59,158,255,0.08);
+      --diode-bd: rgba(59,158,255,0.35);
+      --ir:       #ff7b2b;
+      --ir-bg:    rgba(255,123,43,0.08);
+      --ir-bd:    rgba(255,123,43,0.35);
       --warn-bg:  rgba(255,179,71,0.08);
-      --warn-bd:  rgba(255,179,71,0.4);
-      --danger:   #ff4f4f;
+      --warn-bd:  rgba(255,179,71,0.45);
       --danger-bg:rgba(255,79,79,0.08);
-      --danger-bd:rgba(255,79,79,0.4);
+      --danger-bd:rgba(255,79,79,0.45);
     }
     *{margin:0;padding:0;box-sizing:border-box;}
     body{
@@ -38,38 +36,52 @@
       padding:1.4rem 2rem;
       display:flex;align-items:center;gap:1.1rem;
     }
-    .brand-icon{font-size:2rem;line-height:1;}
+    .brand-icon{font-size:2.2rem;line-height:1;}
     .brand-text h1{
       font-size:1.3rem;font-weight:800;letter-spacing:-.02em;
-      background:linear-gradient(120deg,#ff6b2b,#ffb347);
+      background:linear-gradient(120deg,#3b9eff,#ff7b2b);
       -webkit-background-clip:text;-webkit-text-fill-color:transparent;
     }
     .brand-text p{color:var(--muted);font-size:.8rem;margin-top:.15rem;}
 
     /* ── LAYOUT ───────────────────────────────────────── */
-    main{max-width:880px;margin:2rem auto;padding:0 1.25rem;}
+    main{max-width:900px;margin:2rem auto;padding:0 1.25rem;}
 
     /* ── LEGEND ───────────────────────────────────────── */
     .legend{
-      display:flex;gap:.75rem;flex-wrap:wrap;
-      background:var(--surf);border:1px solid var(--border);
-      border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;
+      display:grid;grid-template-columns:1fr 1fr;gap:.85rem;
+      margin-bottom:1.5rem;
     }
-    .legend-item{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--muted);}
-    .legend-dot{
-      width:10px;height:10px;border-radius:50%;flex-shrink:0;
+    .legend-card{
+      border-radius:10px;padding:1rem 1.25rem;border:1px solid;
+      display:flex;flex-direction:column;gap:.3rem;
     }
-    .ld-fiber{background:var(--fiber);}
-    .ld-ir{background:var(--ir);}
+    .legend-card.diode{background:var(--diode-bg);border-color:var(--diode-bd);}
+    .legend-card.ir   {background:var(--ir-bg);   border-color:var(--ir-bd);}
+    .legend-title{
+      font-weight:700;font-size:.85rem;display:flex;align-items:center;gap:.45rem;
+    }
+    .legend-card.diode .legend-title{color:var(--diode);}
+    .legend-card.ir    .legend-title{color:var(--ir);}
+    .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+    .ld-diode{background:var(--diode);}
+    .ld-ir   {background:var(--ir);}
+    .legend-desc{font-size:.78rem;color:var(--muted);line-height:1.5;}
 
     /* ── SELECTOR PANEL ───────────────────────────────── */
     .selector-panel{
       background:var(--surf);border:1px solid var(--border);
       border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;
     }
-    .selector-panel h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:1rem;}
+    .selector-panel h2{
+      font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;
+      color:var(--muted);margin-bottom:1rem;
+    }
     .selector-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
-    .sel-group label{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem;}
+    .sel-group label{
+      display:block;font-size:.7rem;text-transform:uppercase;
+      letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem;
+    }
     .sel-group select{
       width:100%;background:var(--surf2);color:var(--text);
       border:1px solid var(--border);border-radius:8px;
@@ -79,13 +91,11 @@
       background-repeat:no-repeat;background-position:right .9rem center;
       transition:border-color .15s;
     }
-    .sel-group select:focus{outline:none;border-color:var(--fiber);}
+    .sel-group select:focus{outline:none;border-color:var(--diode);}
     .sel-group select:disabled{opacity:.4;cursor:not-allowed;}
 
     /* ── PLACEHOLDER ──────────────────────────────────── */
-    .placeholder{
-      text-align:center;padding:5rem 2rem;color:var(--muted);
-    }
+    .placeholder{text-align:center;padding:4.5rem 2rem;color:var(--muted);}
     .placeholder .ph-icon{font-size:3.5rem;margin-bottom:1rem;}
     .placeholder p{font-size:.95rem;line-height:1.6;}
 
@@ -97,15 +107,15 @@
     .laser-rec{
       border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;border:1px solid;
     }
-    .laser-rec.fiber{background:var(--fiber-bg);border-color:var(--fiber-bd);}
+    .laser-rec.diode{background:var(--diode-bg);border-color:var(--diode-bd);}
     .laser-rec.ir   {background:var(--ir-bg);   border-color:var(--ir-bd);}
     .laser-badge{
       display:inline-flex;align-items:center;gap:.4rem;
-      padding:.3rem .85rem;border-radius:999px;font-size:.75rem;
-      font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+      padding:.3rem .9rem;border-radius:999px;font-size:.75rem;
+      font-weight:700;text-transform:uppercase;letter-spacing:.05em;
       margin-bottom:.65rem;
     }
-    .fiber .laser-badge{background:var(--fiber);color:#fff;}
+    .diode .laser-badge{background:var(--diode);color:#fff;}
     .ir    .laser-badge{background:var(--ir);   color:#fff;}
     .laser-rec h3{font-size:1rem;margin-bottom:.35rem;}
     .laser-rec p{color:var(--muted);font-size:.88rem;line-height:1.6;}
@@ -126,15 +136,35 @@
     }
     .stat-value{font-size:1.45rem;font-weight:700;line-height:1;}
     .stat-unit{font-size:.7rem;color:var(--muted);margin-top:.25rem;}
-    .stat-range{font-size:.75rem;color:var(--muted);margin-top:.2rem;}
     .stat-na{font-size:.9rem;color:var(--muted);}
+
+    /* Alerts */
+    .alert{
+      border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.1rem;
+      border:1px solid;display:flex;gap:.7rem;align-items:flex-start;
+      font-size:.88rem;line-height:1.55;
+    }
+    .alert.warn  {background:var(--warn-bg);  border-color:var(--warn-bd);}
+    .alert.danger{background:var(--danger-bg);border-color:var(--danger-bd);}
+    .alert-icon{flex-shrink:0;}
+
+    /* Test note */
+    .test-note{
+      background:var(--surf2);border:1px solid var(--border);
+      border-radius:8px;padding:.75rem 1rem;
+      font-size:.8rem;color:var(--muted);line-height:1.5;
+      margin-bottom:1.25rem;display:flex;gap:.5rem;align-items:flex-start;
+    }
 
     /* Tips */
     .tips-card{
       background:var(--surf);border:1px solid var(--border);
       border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;
     }
-    .tips-card h3{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:.85rem;}
+    .tips-card h3{
+      font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;
+      color:var(--muted);margin-bottom:.85rem;
+    }
     .tips-list{list-style:none;}
     .tips-list li{
       display:flex;gap:.65rem;padding:.5rem 0;
@@ -143,32 +173,15 @@
     .tips-list li:last-child{border-bottom:none;}
     .tip-icon{flex-shrink:0;margin-top:.1rem;}
 
-    /* Warning / danger */
-    .alert{
-      border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.25rem;
-      border:1px solid;display:flex;gap:.7rem;align-items:flex-start;
-      font-size:.88rem;line-height:1.55;
-    }
-    .alert.warn   {background:var(--warn-bg);  border-color:var(--warn-bd);}
-    .alert.danger {background:var(--danger-bg);border-color:var(--danger-bd);}
-    .alert-icon{flex-shrink:0;font-size:1rem;}
-
-    /* Recommended test note */
-    .test-note{
-      background:var(--surf2);border:1px solid var(--border);
-      border-radius:8px;padding:.75rem 1rem;
-      font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:1.25rem;
-      display:flex;gap:.5rem;align-items:flex-start;
-    }
-
     /* ── FOOTER ───────────────────────────────────────── */
     footer{
       text-align:center;padding:2rem 1rem;border-top:1px solid var(--border);
       color:var(--muted);font-size:.78rem;margin-top:1rem;
     }
 
-    @media(max-width:600px){
+    @media(max-width:640px){
       .selector-row{grid-template-columns:1fr;}
+      .legend{grid-template-columns:1fr;}
       header{padding:1rem;}
       main{padding:0 .75rem;}
     }
@@ -177,20 +190,25 @@
 <body>
 
 <header>
-  <div class="brand-icon">🔆</div>
+  <div class="brand-icon">⚡</div>
   <div class="brand-text">
     <h1>xTool F2 — Laser Settings Guide</h1>
-    <p>Offline reference · Select a material to get started</p>
+    <p>Offline reference · 15 W Diode (455 nm) + 5 W IR (1064 nm)</p>
   </div>
 </header>
 
 <main>
 
-  <!-- Legend -->
+  <!-- Laser legend -->
   <div class="legend">
-    <span style="font-size:.8rem;font-weight:600;color:var(--text);margin-right:.25rem;">Lasers:</span>
-    <div class="legend-item"><span class="legend-dot ld-fiber"></span> Fiber Laser (20 W · 1064 nm) — metals, coated &amp; dark materials</div>
-    <div class="legend-item"><span class="legend-dot ld-ir"></span> IR Diode Laser (2 W · 1064 nm) — organics, leather, some plastics</div>
+    <div class="legend-card diode">
+      <div class="legend-title"><span class="legend-dot ld-diode"></span>15 W Diode Laser — 455 nm (Blue)</div>
+      <div class="legend-desc">Wood · Leather · Felt · Dark &amp; opaque acrylics · Paper · Cork · Rubber · Stone · Glass</div>
+    </div>
+    <div class="legend-card ir">
+      <div class="legend-title"><span class="legend-dot ld-ir"></span>5 W IR Laser — 1064 nm (Infrared)</div>
+      <div class="legend-desc">Metals · Coated metals · Clear acrylic · Plastics · Ceramics · High-contrast marking</div>
+    </div>
   </div>
 
   <!-- Selectors -->
@@ -208,7 +226,7 @@
           <option value="acrylic">Acrylic &amp; Plastics</option>
           <option value="paper">Paper &amp; Cardboard</option>
           <option value="stone">Stone, Slate &amp; Ceramic</option>
-          <option value="other">Other (Rubber, Cork, Felt)</option>
+          <option value="other">Other (Rubber, Cork, Felt, Glass)</option>
         </select>
       </div>
       <div class="sel-group">
@@ -228,7 +246,7 @@
 
   <!-- Placeholder -->
   <div class="placeholder" id="placeholder">
-    <div class="ph-icon">⚡</div>
+    <div class="ph-icon">🔆</div>
     <p>Select a category, material, and operation above<br>to see your recommended laser settings.</p>
   </div>
 
@@ -237,7 +255,7 @@
     <div id="laser-rec-box"></div>
     <div class="test-note">
       <span>💡</span>
-      <span>These are proven starting points. Always run a small test piece first — slight variations in material batch, humidity, and focus distance can affect results. Adjust power ±5–10% and speed ±10% until you dial it in.</span>
+      <span><strong>These are proven starting points.</strong> Always run a small test piece first — material batch, humidity, and focus distance all affect results. Adjust power ±5% and speed ±10% to dial in your machine.</span>
     </div>
     <div class="settings-grid" id="settings-grid"></div>
     <div id="alert-box"></div>
@@ -247,160 +265,167 @@
 </main>
 
 <footer>
-  xTool F2 Laser Settings Guide · Works fully offline · All settings are starting points — test before final runs
+  xTool F2 Laser Settings Guide · Works fully offline · Settings in mm/s — all are starting points, always test first
 </footer>
 
 <script>
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-// laser: "fiber" = 20W 1064nm Fiber | "ir" = 2W 1064nm IR Diode
-// power: %, speed: mm/s, freq: kHz (fiber only), lpi: lines/inch,
-// passes: count, focus: mm offset (0 = at surface)
-// danger: safety warning | warn: caution note | tips: array of strings
+// ─── DATA ──────────────────────────────────────────────────────────────────────
+// laser: "diode" = 15W 455nm blue  |  "ir" = 5W 1064nm infrared
+// power: %  speed: mm/s  lpi: lines/inch  passes: count  focus: mm offset
+// airAssist: bool  warn: caution string  danger: safety string  tips: string[]
 
 const DB = {
 
-  // ── METALS ─────────────────────────────────────────────────────────────────
-  metals: {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // METALS  →  5W IR Laser (1064 nm)
+  // The 1064 nm wavelength is absorbed by metals; the 455 nm blue diode reflects
+  // off most metal surfaces and cannot mark them reliably.
+  // ─────────────────────────────────────────────────────────────────────────────
+  metals:{
     label:"Metals",
     materials:{
+
       stainless_steel:{
         label:"Stainless Steel",
         ops:{
           engrave:{
-            laser:"fiber",
-            why:"The 1064 nm fiber laser is absorbed by stainless steel far more efficiently than any diode. It vaporises the surface oxide layer to leave a deep, permanent mark.",
-            power:65, speed:500, freq:30, lpi:400, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"Stainless steel absorbs 1064 nm infrared well. The 5W IR laser vaporises the thin surface oxide layer, producing a permanent, corrosion-resistant engraved mark.",
+            power:85, speed:80, lpi:400, passes:2, focus:0, airAssist:false,
             tips:[
-              "Clean the surface with IPA before engraving — oils cause uneven marks.",
-              "For a darker, more contrasted engrave, reduce speed to 400 mm/s and increase frequency to 35 kHz.",
-              "For jewellery or fine detail, raise LPI to 500 for tighter hatching.",
-              "A second pass at 50% power deepens colour without burning edges.",
+              "Clean with IPA before engraving — oils and fingerprints cause uneven marks.",
+              "Two passes at this setting give a deep, dark engraving. For a shallower grey mark, try 1 pass at 75% power.",
+              "For fine detail (logos, text under 5 mm), raise LPI to 500.",
+              "Sand the surface to 400 grit before engraving for a more dramatic contrast on brushed steel.",
             ]
           },
           black_mark:{
-            laser:"fiber",
-            why:"High-frequency, high-speed passes create a thin oxide layer that appears jet black — no material is removed. Ideal for barcodes, logos, and data plates.",
-            power:40, speed:900, freq:50, lpi:300, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"Running high frequency at lower power creates a thin black oxide (annealed) layer on stainless steel. Nothing is removed — it's a surface colour change, great for barcodes and data plates.",
+            power:65, speed:150, lpi:300, passes:1, focus:0, airAssist:false,
             tips:[
-              "The black annealing process is sensitive to exact speed — test in 50 mm/s increments.",
-              "Surface cleanliness is critical; fingerprints will produce patchy results.",
-              "Anneal at defocus +1–2 mm for a softer, wider beam if you need an even tone.",
+              "Black annealing is sensitive to speed — test in 20 mm/s increments to nail the darkest black.",
+              "Surface must be spotless — any contamination produces a patchy result.",
+              "A slightly defocused beam (+0.5 mm) produces a softer, more even tone across large fills.",
             ]
           }
         }
       },
+
       carbon_steel:{
         label:"Carbon Steel / Mild Steel",
         ops:{
           engrave:{
-            laser:"fiber",
-            why:"Carbon steel absorbs 1064 nm infrared extremely well. The fiber laser creates deep, corrosion-resistant marks by vaporising the surface.",
-            power:70, speed:450, freq:25, lpi:400, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"Carbon steel absorbs the IR wavelength efficiently. The 5W IR creates deep marks that are resistant to rubbing but will need sealing against rust.",
+            power:85, speed:70, lpi:400, passes:2, focus:0, airAssist:false,
             tips:[
-              "Bare carbon steel rusts quickly — seal engraved areas with oil or clear lacquer after marking.",
-              "If the result looks grey rather than dark, increase power to 75–80%.",
-              "Remove mill scale (black oxide) with a wire brush before engraving for cleaner edges.",
+              "Bare carbon steel rusts quickly — seal engraved areas with oil, wax, or clear lacquer immediately after marking.",
+              "Mill scale (black oxide layer) can block the beam — brush it off with a wire brush before engraving.",
+              "If the result looks light grey rather than dark, add a third pass at 80% power.",
             ]
           }
         }
       },
+
       anodized_aluminum:{
         label:"Anodized Aluminium",
         ops:{
           engrave:{
-            laser:"fiber",
-            why:"The fiber laser removes the coloured anodize layer to reveal bright aluminium beneath, creating sharp white-on-colour contrast without touching the base metal.",
-            power:30, speed:1000, freq:60, lpi:300, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"The 5W IR ablates the coloured anodize coating cleanly to reveal bright bare aluminium beneath, producing a striking white-on-colour or silver-on-colour result with no heat damage to the base metal.",
+            power:50, speed:250, lpi:300, passes:1, focus:0, airAssist:false,
             tips:[
-              "Lower power gives brighter white — try 25% first and work up.",
-              "High speed and frequency means fast cycle time; great for production runs.",
-              "Blue and red anodize produce the highest contrast results.",
-              "Black anodize will produce a silver/white mark that is very striking.",
+              "This is one of the easiest materials — the anodize coat removes cleanly in a single fast pass.",
+              "Lower power gives a brighter, crisper white reveal. Try 40% first.",
+              "Black anodize → silver/white. Red and blue anodize → bright aluminium. All look great.",
+              "Ideal for water bottles, tumblers, phone cases, and name tags.",
             ]
           }
         }
       },
+
       brass:{
         label:"Brass",
         ops:{
           engrave:{
-            laser:"fiber",
-            why:"Brass is a good absorber of infrared light. The fiber laser engraves cleanly without the reflection issues that plague lower-powered diode lasers on polished metal.",
-            power:60, speed:500, freq:30, lpi:400, passes:1, focus:0,
-            airAssist:false,
-            warn:"Brass contains zinc. Work in a ventilated area or use fume extraction — zinc oxide fumes are harmful.",
+            laser:"ir",
+            why:"Brass absorbs 1064 nm reasonably well. The 5W IR marks and engraves brass for trophies, plaques, and decorative items.",
+            power:90, speed:70, lpi:400, passes:2, focus:0, airAssist:false,
+            warn:"Brass contains zinc. Use fume extraction — zinc oxide fumes are harmful to inhale.",
             tips:[
-              "Polish the surface before engraving for crisper edges.",
-              "Degrease with acetone — brass tarnish products block the beam.",
-              "For deep engrave add a second pass at 70% power.",
-              "Lacquered brass: remove the lacquer with acetone first, or the result will be patchy.",
+              "Degrease with acetone first — tarnish products scatter the beam.",
+              "Polish with Brasso before engraving for crisper, deeper contrast.",
+              "Lacquered brass: strip the lacquer with acetone first, otherwise the result is patchy.",
+              "For deeper engraving, add a third pass at 85% power.",
             ]
           }
         }
       },
+
       copper:{
         label:"Copper",
         ops:{
           engrave:{
-            laser:"fiber",
-            why:"Copper is highly reflective at visible wavelengths, making diode lasers nearly useless. The 1064 nm fiber laser is far better absorbed by copper at the right power level.",
-            power:80, speed:350, freq:20, lpi:350, passes:2, focus:0,
-            airAssist:false,
-            warn:"Copper reflects infrared strongly. Never look at the work area during engraving. Ensure your enclosure and safety glasses are rated for 1064 nm.",
+            laser:"ir",
+            why:"Copper is the hardest common metal to laser-mark because it reflects infrared strongly. The 5W IR can mark oxidised or coated copper; expect multiple passes on clean polished copper.",
+            power:100, speed:50, lpi:350, passes:3, focus:0, airAssist:false,
+            warn:"Copper reflects 1064 nm light strongly. Ensure your F2 lid is fully closed and never bypass the safety interlocks.",
             tips:[
-              "Copper requires high power and slow speed — be patient.",
-              "A second pass is almost always needed for clean engraving.",
-              "Polished copper is the most reflective and hardest to mark; oxidised copper marks more easily.",
-              "If your machine stalls on copper, reduce LPI to 300 to cut scan time.",
+              "Lightly oxidised (patinated) copper marks far more easily than bright polished copper.",
+              "Try applying a thin layer of flat black spray paint — let dry, engrave through it, wipe clean. The paint aids absorption.",
+              "For jewellery or thin sheet: reduce power to 80% to avoid warping.",
+              "Three passes are a baseline — some copper may need 4–5. Patience pays off.",
             ]
           }
         }
       },
+
       titanium:{
         label:"Titanium",
         ops:{
           engrave:{
-            laser:"fiber",
-            why:"Titanium engraves beautifully with a fiber laser, creating deep permanent marks. It also colour-anneals, making it popular for jewellery and decorative work.",
-            power:55, speed:600, freq:25, lpi:400, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"Titanium engraves cleanly with the IR laser and takes a permanent, very durable mark. Its surface oxide layer also enables colour annealing — a unique capability of 1064 nm IR lasers.",
+            power:80, speed:100, lpi:400, passes:2, focus:0, airAssist:false,
             tips:[
               "Clean with IPA — titanium is sensitive to surface contamination.",
-              "For pure engraving, keep power at 55–65%.",
+              "Titanium engraving colour ranges from silver-grey to dark depending on speed and power.",
+              "For surgical or EDC items, the engraved mark is as durable as the base metal.",
             ]
           },
           color_anneal:{
-            laser:"fiber",
-            why:"Changing power and speed shifts the oxide layer thickness, producing gold, blue, purple, and green without any pigment. Each colour requires different settings.",
-            power:30, speedRange:"200–800", freq:50, lpi:200, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"By varying speed and power, the IR laser changes the thickness of the titanium oxide layer, producing vivid gold, blue, purple, and green colours — all without any pigment or paint.",
+            power:null, speed:null, lpi:200, passes:1, focus:0, airAssist:false,
+            speedNote:"200–800 mm/s (varies by colour)",
+            powerNote:"20–60% (varies by colour)",
             tips:[
-              "Gold / yellow: ~800 mm/s, 20% power, 50 kHz.",
-              "Blue: ~500 mm/s, 30% power, 50 kHz.",
-              "Purple: ~350 mm/s, 35% power, 50 kHz.",
-              "Keep the piece dead still — vibration shifts colour bands.",
-              "Results vary slightly with each titanium alloy — always test first.",
+              "Gold / yellow: ~800 mm/s, 20–25% power.",
+              "Bronze / brown: ~600 mm/s, 25–30% power.",
+              "Blue: ~450 mm/s, 30–35% power.",
+              "Purple: ~300 mm/s, 35–40% power.",
+              "Green: ~200 mm/s, 40–50% power.",
+              "Make a test grid with speed & power increments — colours shift dramatically between steps.",
+              "Keep the piece completely still during engraving — any vibration shifts colour bands.",
+              "Each titanium alloy (Grade 2, Grade 5) anneals at slightly different settings.",
             ]
           }
         }
       },
+
       gold_silver:{
         label:"Gold / Silver (Jewellery)",
         ops:{
           mark:{
-            laser:"fiber",
-            why:"Precious metals are soft and reflective. The fiber laser marks without deep removal, preserving the piece while adding stamps, hallmarks, or decorative patterns.",
-            power:35, speed:800, freq:40, lpi:300, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"Precious metals are soft, expensive, and irreplaceable. The 5W IR marks at low power to add hallmarks, logos, and designs without deep material removal.",
+            power:60, speed:180, lpi:300, passes:1, focus:0, airAssist:false,
             tips:[
-              "Use the minimum power needed — precious metals are expensive and irreplaceable.",
+              "Always use minimum effective power — precious metals cannot be un-engraved.",
               "925 sterling silver tarnishes quickly; mark in a clean environment and seal with jewellery lacquer.",
-              "Gold alloys vary; 18ct yellow gold marks more easily than 9ct.",
-              "For very fine detail (hallmarks), increase LPI to 500.",
+              "18ct yellow gold marks cleanly at these settings. 9ct alloys may need 65–70% power.",
+              "Fine text under 3 mm: increase LPI to 500 and reduce speed to 150 mm/s.",
             ]
           }
         }
@@ -408,56 +433,59 @@ const DB = {
     }
   },
 
-  // ── COATED & PAINTED ───────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // COATED & PAINTED  →  5W IR Laser (1064 nm)
+  // ─────────────────────────────────────────────────────────────────────────────
   coated:{
     label:"Coated & Painted Metals",
     materials:{
+
       powder_coat:{
         label:"Powder Coated Metal",
         ops:{
           mark:{
-            laser:"fiber",
-            why:"The fiber laser ablates (removes) the powder coat cleanly to expose bare metal beneath. The result is a crisp, bright mark on a coloured background.",
-            power:22, speed:1500, freq:80, lpi:254, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"The 5W IR removes (ablates) the powder coat layer cleanly to expose bare metal beneath. Only the coating is removed — the underlying metal stays intact.",
+            power:35, speed:450, lpi:254, passes:1, focus:0, airAssist:false,
             tips:[
-              "Lower power is better — you only need to remove the coating, not the metal.",
-              "Fast speed + high frequency = clean edges without burning surrounding coat.",
-              "If edges look scorched, increase speed to 2000 mm/s and drop power to 18%.",
-              "Works great on tumblers, thermos flasks, and outdoor equipment.",
+              "Use the lowest power that cleanly removes the coating — you want to stop at the metal, not engrave into it.",
+              "High speed + low power gives the cleanest edges without scorching surrounding coat.",
+              "Works brilliantly on tumblers, flasks, and outdoor gear.",
+              "If edges look soft or burnt, increase speed to 600 mm/s and drop power to 28%.",
             ]
           }
         }
       },
+
       painted_metal:{
         label:"Painted Metal",
         ops:{
           mark:{
-            laser:"fiber",
-            why:"Similar to powder coat — the fiber laser precisely removes paint to expose the metal underneath. Great for safety labels, serial numbers, and asset tags.",
-            power:28, speed:1200, freq:60, lpi:300, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"The IR laser precisely strips paint to reveal metal beneath. Ideal for serial numbers, asset tags, QR codes, and safety labels on tools and equipment.",
+            power:40, speed:350, lpi:300, passes:1, focus:0, airAssist:false,
             tips:[
-              "Thin factory paint removes cleanly in one pass.",
-              "Thick epoxy paint may need 2 passes at reduced power.",
-              "The exposed metal will oxidise over time outdoors — seal with clear lacquer if it's for external use.",
+              "Thin factory paint removes in a single fast pass.",
+              "Thick epoxy or rubberised paint may need 2 passes at reduced power (30%).",
+              "The exposed metal will oxidise outdoors — seal with clear lacquer for exterior applications.",
             ]
           }
         }
       },
+
       cermark:{
-        label:"Cermark / Laser Bond Coated",
+        label:"Cermark / Laser Bond Spray",
         ops:{
           mark:{
-            laser:"fiber",
-            why:"Cermark is a spray-on ceramic compound. The fiber laser fuses it permanently to the metal surface, creating an extremely durable black mark on almost any metal.",
-            power:45, speed:700, freq:30, lpi:400, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"Cermark is a ceramic compound spray. The IR laser fuses it permanently into the metal surface, producing an extremely hard, dishwasher-safe black mark on almost any metal.",
+            power:55, speed:200, lpi:400, passes:1, focus:0, airAssist:false,
             tips:[
-              "Apply a thin, even coat of Cermark and let it dry completely before lasing.",
-              "After lasing, wash off the unfused compound with water.",
-              "Increase power for deeper black; decrease for grey tones.",
-              "Works on stainless, aluminium, brass, and most metals.",
+              "Spray a thin, even coat and let dry completely (5–10 min) before lasing.",
+              "After lasing, wash off the unfused compound with water — only the fused areas remain.",
+              "Increase power for deeper black; reduce for grey tones.",
+              "Works on stainless, aluminium, brass, copper, titanium, and most metals.",
+              "Cermark is expensive — practice on scrap first to confirm settings.",
             ]
           }
         }
@@ -465,132 +493,132 @@ const DB = {
     }
   },
 
-  // ── WOOD ───────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // WOOD  →  15W Diode Laser (455 nm)
+  // The 455 nm blue wavelength is strongly absorbed by wood lignin.
+  // The 5W IR reflects off pale wood surfaces with poor results.
+  // ─────────────────────────────────────────────────────────────────────────────
   wood:{
     label:"Wood & Bamboo",
     materials:{
+
       hardwood:{
         label:"Hardwood (Oak, Walnut, Maple)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"The 1064 nm IR diode is well-absorbed by wood lignin, producing warm brown engraves. The fiber laser's galvo speed would risk burning fine grain wood without control.",
-            power:70, speed:180, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"The 455 nm blue diode is strongly absorbed by wood lignin, producing warm brown engraves with excellent contrast. The 5W IR reflects off pale wood surfaces and cannot reliably mark them.",
+            power:55, speed:300, lpi:254, passes:1, focus:0, airAssist:true,
             tips:[
-              "Air assist reduces charring and keeps edges crisp.",
-              "Increase LPI to 300–400 for photographic / greyscale engraves.",
-              "Reduce power to 50–60% for lighter burns that show more wood grain detail.",
-              "Mask with transfer tape, then wipe residue with a damp cloth after engraving.",
-              "Walnut produces the darkest, most contrasty results of common hardwoods.",
+              "Air assist dramatically reduces charring and keeps engraved edges crisp.",
+              "Walnut produces the darkest, highest-contrast results of common hardwoods.",
+              "For photographic / greyscale engrave, raise LPI to 400–500 and lower power to 30–40%.",
+              "Mask with transfer tape before engraving, then wipe residue with a damp cloth afterwards.",
+              "End grain engraves darker than face grain at the same settings — test both orientations.",
             ]
           },
           cut_3mm:{
-            laser:"ir",
-            why:"The IR diode has enough sustained power to cut thin hardwood cleanly. Multiple passes keep heat localised and minimise charring.",
-            power:100, speed:35, freq:null, lpi:null, passes:3, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"The 15W diode has enough sustained power to cut 3 mm hardwood cleanly in multiple passes. Multiple passes spread heat to minimise charring.",
+            power:100, speed:65, lpi:null, passes:3, focus:0, airAssist:true,
             tips:[
-              "Pin or tape the wood flat — warping mid-cut causes incomplete cuts.",
-              "Cut at slightly-out-of-focus (+0.5–1 mm) to widen the kerf on thicker material.",
-              "Each pass should lower the focus by 0.5 mm if your machine supports Z steps.",
-              "Finish cuts with a pass of the laser at 10% power to clean char from edges.",
+              "Pin or tape the wood dead flat — any bow means sections won't cut through.",
+              "Lower the focus by 0.5 mm on each additional pass if your machine supports Z-step.",
+              "Finish with a 10% power pass to clean char residue from cut edges.",
             ]
           }
         }
       },
+
       softwood:{
-        label:"Softwood (Pine, Cedar, Balsa)",
+        label:"Softwood (Pine, Cedar)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Softwoods are highly resinous and burn quickly. The IR diode at moderate power gives controlled engraves without flare-ups.",
-            power:55, speed:220, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"Softwoods are resinous and burn quickly. The 15W diode at moderate power gives controlled engraves — the blue wavelength hits lignin without igniting the resin.",
+            power:40, speed:400, lpi:254, passes:1, focus:0, airAssist:true,
             tips:[
-              "Pine resin can cause flare-ups — keep air assist on at all times.",
-              "Grain direction dramatically changes engrave depth; test both orientations.",
-              "Balsa: reduce power to 30–40% — it burns extremely easily.",
+              "Pine resin can flare up — keep air assist on at all times.",
+              "Wood grain direction changes engrave depth noticeably — test across and along grain.",
+              "Knots are harder and engrave lighter; adjust power if consistency matters.",
             ]
           },
           cut_3mm:{
-            laser:"ir",
-            why:"Softwoods cut faster than hardwoods. Fewer passes needed due to lower density.",
-            power:90, speed:55, freq:null, lpi:null, passes:2, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"Softwoods cut faster than hardwoods due to lower density. Fewer passes and higher speed.",
+            power:90, speed:85, lpi:null, passes:2, focus:0, airAssist:true,
             tips:[
-              "Cedar is oily — clean the lens more frequently when cutting it.",
-              "Balsa cuts at 40% power, 100 mm/s, 1 pass.",
+              "Cedar is oily — clean the lens more often when cutting it.",
+              "Balsa wood: reduce power to 35%, speed 500 mm/s, 1 pass — it's extremely soft.",
             ]
           }
         }
       },
+
       plywood:{
-        label:"Plywood",
+        label:"Plywood (Birch / Laser-grade)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Birch plywood is a laser favourite — the IR diode gives clean, dark engraves with good contrast on the light birch face.",
-            power:65, speed:200, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"Birch plywood is a laser staple — the 15W diode gives dark, high-contrast engraves on the pale birch face veneer.",
+            power:50, speed:300, lpi:254, passes:1, focus:0, airAssist:true,
             tips:[
-              "Cheap plywood has voids in the core that cause incomplete cuts — use laser-grade or Baltic birch.",
-              "The glue layers in plywood produce more fumes than solid wood; ensure good ventilation.",
-              "For a very dark engrave, reduce speed to 130 mm/s.",
+              "Use laser-grade or Baltic birch plywood — cheap ply has internal voids that cause incomplete cuts.",
+              "Glue layers produce more fumes than solid wood — keep ventilation running.",
+              "For a very dark fill engrave, drop speed to 150 mm/s.",
             ]
           },
           cut_4mm:{
-            laser:"ir",
-            why:"4 mm birch plywood is the most common laser-cut material. The IR diode handles it reliably in 3–4 passes.",
-            power:100, speed:30, freq:null, lpi:null, passes:4, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"4 mm birch plywood is the most popular laser-cut material. The 15W diode handles it reliably in 3–4 passes.",
+            power:100, speed:45, lpi:null, passes:4, focus:0, airAssist:true,
             tips:[
-              "Weight the board flat — any bow means some sections won't cut through.",
-              "Tape the bottom surface to prevent flashback scorching on the underside.",
+              "Weight or tape the board completely flat before cutting.",
+              "Tape the underside of the sheet to prevent flashback scorch marks.",
+              "If you get incomplete cuts in isolated spots, increase passes by 1 rather than cutting power.",
             ]
           }
         }
       },
+
       mdf:{
         label:"MDF (Medium Density Fibreboard)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"MDF engraves smoothly and consistently — the uniform composition means no grain variation. IR diode gives excellent greyscale results.",
-            power:80, speed:150, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:true,
-            warn:"MDF contains formaldehyde-based resins. Always use fume extraction and work in a well-ventilated area. Do not use for food contact items.",
+            laser:"diode",
+            why:"MDF engraves smoothly and consistently — the uniform composition means no grain surprises. The 15W diode gives excellent greyscale depth control.",
+            power:65, speed:200, lpi:254, passes:1, focus:0, airAssist:true,
+            warn:"MDF contains urea-formaldehyde resin. Always use fume extraction. Do not use for food contact items.",
             tips:[
-              "MDF is dusty — clean the lens after every session.",
-              "Seal engraved MDF with shellac or acrylic spray to stop moisture absorption.",
-              "For painting: tape the surface, engrave, remove tape, then paint for crisp edges.",
+              "MDF is very dusty — clean the lens after every session.",
+              "Seal engraved MDF with shellac or clear acrylic spray to stop moisture absorption.",
+              "Masking technique: tape surface → engrave → remove tape → paint for razor-crisp painted edges.",
             ]
           },
           cut_3mm:{
-            laser:"ir",
-            why:"MDF cuts cleanly with the IR diode. The dense composition needs slower speed but fewer passes than plywood.",
-            power:100, speed:25, freq:null, lpi:null, passes:3, focus:0,
-            airAssist:true,
-            warn:"High fume output when cutting MDF — fume extraction is essential.",
+            laser:"diode",
+            why:"MDF cuts cleanly with the 15W diode. Dense composition means slower speed but reliable results.",
+            power:100, speed:30, lpi:null, passes:3, focus:0, airAssist:true,
+            warn:"High fume output when cutting MDF — fume extraction is essential, not optional.",
             tips:[
-              "MDF edges are dark and will need sanding / sealing if you want a clean painted finish.",
-              "Reduce the last pass to 70% power to avoid scorching the back.",
+              "MDF cut edges are dark and rough — sand and seal if painting.",
+              "Reduce the final pass to 70% power to avoid scorching the back face.",
             ]
           }
         }
       },
+
       bamboo:{
         label:"Bamboo",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Bamboo is dense and fibrous. The IR diode burns it cleanly, creating beautiful dark marks on the pale surface. Popular for cutting boards and utensils.",
-            power:65, speed:190, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"Bamboo is dense and fibrous. The 455 nm diode burns it cleanly with beautiful warm brown marks on the pale surface — popular for cutting boards and utensils.",
+            power:50, speed:280, lpi:300, passes:1, focus:0, airAssist:true,
             tips:[
-              "Bamboo engraves with a warm golden-brown colour — beautiful for decorative work.",
-              "Hard bamboo cutting boards may need 75% power.",
-              "Bamboo utensils: always food-safe finish after engraving (mineral oil, beeswax).",
+              "Hard bamboo cutting boards may need 60–65% power.",
+              "Always finish engraved kitchen items with food-safe oil (mineral oil, beeswax).",
+              "Bamboo's layered structure can produce slightly uneven engraves — raise LPI to 400 for photographic work.",
             ]
           }
         }
@@ -598,68 +626,68 @@ const DB = {
     }
   },
 
-  // ── LEATHER ────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // LEATHER  →  15W Diode Laser (455 nm)
+  // ─────────────────────────────────────────────────────────────────────────────
   leather:{
     label:"Leather",
     materials:{
+
       genuine:{
         label:"Genuine Leather (Cowhide, Full-grain)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Leather absorbs 1064 nm IR extremely well. The diode produces controlled, deep engraves with warm brown tones that deepen with higher power.",
-            power:55, speed:180, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"The 455 nm blue diode is absorbed strongly by leather pigment, giving controlled burn depth with warm brown tones. Produces rich, tactile engraved results.",
+            power:35, speed:350, lpi:300, passes:1, focus:0, airAssist:true,
             tips:[
-              "Air assist prevents the burn from spreading and keeps edges sharp.",
-              "For lighter, more subtle engraves, reduce power to 35–40%.",
-              "Full-grain leather engraves differently on the grain vs flesh side — test both.",
-              "Chrome-tanned leather can produce toxic chromium fumes — use vegetable-tanned if possible.",
-              "After engraving, apply leather conditioner to prevent drying.",
+              "Air assist prevents the burn from spreading sideways — keep it on for crisp edges.",
+              "For subtle debossed look: reduce power to 20–25%.",
+              "Full-grain (smooth) side engraves differently to flesh/suede side — test both.",
+              "After engraving, apply leather conditioner to prevent drying and cracking.",
             ]
           },
           cut:{
-            laser:"ir",
-            why:"The IR diode cuts leather cleanly with minimal fraying. No need for scissors or die-cutters.",
-            power:80, speed:80, freq:null, lpi:null, passes:1, focus:0,
-            airAssist:true,
-            warn:"Chrome-tanned leather (most commercial leather) produces hexavalent chromium fumes when cut — a known carcinogen. Use vegetable-tanned leather and fume extraction.",
+            laser:"diode",
+            why:"The 15W diode cuts leather cleanly in one pass with a sealed edge — no fraying, no scissors needed.",
+            power:70, speed:120, lpi:null, passes:1, focus:0, airAssist:true,
+            warn:"Chrome-tanned leather (most commercial leather) produces hexavalent chromium compounds when burned — a known carcinogen. Use vegetable-tanned leather or ensure strong fume extraction.",
             tips:[
-              "Leather cut edges seal as they are cut — a big advantage over mechanical cutting.",
-              "Thicker leathers (3–4 mm) may need 2 passes at reduced speed.",
+              "Laser-cut leather edges are heat-sealed — a major advantage over mechanical cutting.",
+              "Thick leather (3–4 mm): slow to 70 mm/s and add a second pass.",
             ]
           }
         }
       },
+
       veg_tan:{
         label:"Veg-Tan Leather",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Vegetable-tanned leather is the safest leather to laser. It produces clean burns with excellent contrast and no toxic chromium fumes.",
-            power:50, speed:200, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"Vegetable-tanned leather is the safest leather to laser — no toxic chrome fumes. It engraves cleanly with excellent contrast and is the preferred choice for quality leatherwork.",
+            power:30, speed:400, lpi:300, passes:1, focus:0, airAssist:true,
             tips:[
-              "Veg-tan is the gold standard for laser leather work — predictable and clean.",
-              "Natural/undyed veg-tan gives the best contrast.",
-              "Wet the leather slightly before engraving for a more pronounced result.",
+              "Natural / undyed veg-tan gives the highest contrast engraving.",
+              "Slightly dampening the leather before engraving produces a more pronounced, raised result.",
+              "Veg-tan is consistent batch-to-batch — once you dial in settings, they stay reliable.",
             ]
           }
         }
       },
+
       faux:{
         label:"Faux / PU Leather",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Faux leather (polyurethane) responds to the IR diode, removing the surface coating to reveal the fabric backing beneath — creating a two-tone effect.",
-            power:40, speed:220, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:true,
-            warn:"PU leather is plastic — it produces VOCs (volatile organic compounds) when engraved or cut. Fume extraction is mandatory. Do not use PVC leather (contains chlorine).",
+            laser:"diode",
+            why:"Faux leather (polyurethane over fabric) responds to the 15W diode — the surface coating is removed to reveal the fabric backing, creating a two-tone contrast effect.",
+            power:25, speed:400, lpi:300, passes:1, focus:0, airAssist:true,
+            warn:"PU leather is plastic — it produces VOCs when engraved. Fume extraction is mandatory. Never use PVC (vinyl) leather — it releases chlorine gas.",
             tips:[
-              "Lower power than genuine leather — PU melts rather than burns.",
-              "If the surface bubbles or melts, reduce power by 10% increments.",
-              "Never use genuine PVC (vinyl) leather — it produces chlorine gas.",
+              "Lower power than genuine leather — PU melts rather than burns cleanly.",
+              "If the surface bubbles, reduce power by 5% increments until it stops.",
+              "Always confirm the material is PU, not PVC — check the label or manufacturer spec.",
             ]
           }
         }
@@ -667,67 +695,63 @@ const DB = {
     }
   },
 
-  // ── ACRYLIC & PLASTIC ──────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ACRYLIC & PLASTICS
+  // Clear acrylic → IR (transparent to blue)
+  // Dark / coloured acrylic → Diode
+  // ─────────────────────────────────────────────────────────────────────────────
   acrylic:{
     label:"Acrylic & Plastics",
     materials:{
-      cast_acrylic:{
-        label:"Cast Acrylic (Clear)",
+
+      clear_acrylic:{
+        label:"Clear Acrylic (Cast)",
         ops:{
           engrave:{
             laser:"ir",
-            why:"Cast acrylic produces a frosted white engrave with a fire-polished appearance from diode engraving. The result is crisp and legible.",
-            power:75, speed:130, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:true,
+            why:"Clear acrylic is transparent to the 455 nm blue diode — it passes straight through without engraving. The 5W IR (1064 nm) is absorbed by the acrylic polymer, frosting the surface to a milky white.",
+            power:70, speed:150, lpi:254, passes:1, focus:0, airAssist:true,
+            warn:"Acrylic fumes are irritating. Use fume extraction. Never laser PVC or vinyl — they produce chlorine gas.",
             tips:[
-              "Leave the protective paper/film on during engraving — it stops surface scratches.",
-              "For a glossy engraved surface (like in signage), defocus by +1 mm.",
-              "Engrave from the back for a 'buried' look — flip your artwork horizontally.",
-            ]
-          },
-          cut_3mm:{
-            laser:"ir",
-            why:"Cast acrylic cuts with fire-polished edges from the IR diode — far superior to extruded acrylic. One clean pass if settings are right.",
-            power:100, speed:22, freq:null, lpi:null, passes:3, focus:0,
-            airAssist:true,
-            warn:"Acrylic fumes are irritating but not as toxic as PVC. Use fume extraction. Never cut PVC or vinyl — it produces chlorine gas.",
-            tips:[
-              "Cast acrylic = flame-polished edges. Extruded acrylic chips — use cast for cutting.",
-              "Keep air assist low or off when cutting — too much air can cause flame.",
-              "Do not use a honeycomb bed without supports; acrylic can bow and refocus.",
+              "Leave the protective paper film on during engraving — prevents surface scratches.",
+              "Defocus slightly (+0.5–1 mm) for a softer, more even frost on large fills.",
+              "Engrave from the back face for a premium 'buried' look — mirror your artwork horizontally first.",
+              "Cast acrylic (not extruded) gives the best frosted results and edges.",
             ]
           }
         }
       },
+
       coloured_acrylic:{
-        label:"Cast Acrylic (Coloured / Opaque)",
+        label:"Coloured / Opaque Acrylic (Cast)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Coloured cast acrylic engraves to reveal a contrasting lighter colour beneath. The IR diode ablates the tinted surface cleanly.",
-            power:65, speed:150, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"Dark and opaque acrylics absorb the 455 nm blue diode. Engraving removes the coloured surface to reveal a contrasting lighter core — ideal for signs and badges.",
+            power:55, speed:200, lpi:254, passes:1, focus:0, airAssist:true,
+            warn:"Acrylic fumes are irritating — use fume extraction. Never laser PVC or vinyl.",
             tips:[
-              "Dark colours (black, dark blue) give the best contrast when engraved.",
-              "White acrylic engraving may be hard to see — use backlit applications.",
-              "Two-colour acrylic (coloured face, white core) gives stunning signage results.",
+              "Two-colour acrylic (coloured face, white or contrasting core) is purpose-made for this — stunning results for signs.",
+              "Black → white core is the highest contrast option.",
+              "Keep the protective film on during engraving for scratch protection.",
+              "Defocus slightly for smoother engraving on large areas.",
             ]
           }
         }
       },
+
       delrin:{
         label:"Delrin / POM (Acetal Plastic)",
         ops:{
           engrave:{
             laser:"ir",
-            why:"Delrin is a machinable plastic that the IR diode can engrave for stamps, gears, and industrial parts. It melts cleanly rather than burning.",
-            power:55, speed:200, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:true,
-            warn:"Ensure good ventilation — Delrin fumes are an irritant. It does not produce the acutely toxic fumes of PVC.",
+            why:"Delrin is an engineering plastic that the 5W IR can engrave for stamps, machine parts, and labels. The 1064 nm wavelength is absorbed by the polymer regardless of colour.",
+            power:60, speed:200, lpi:300, passes:1, focus:0, airAssist:true,
+            warn:"Delrin fumes are an irritant — ensure good ventilation.",
             tips:[
-              "Black Delrin produces the best white-on-black engrave contrast.",
-              "Deep engraves for rubber stamps: reduce speed to 100 mm/s, multiple passes.",
-              "Delrin cools quickly — fast scan speed helps prevent heat distortion.",
+              "Black Delrin produces the best white-on-black contrast when engraved.",
+              "For deep stamp cavities: reduce speed to 100 mm/s and add a second pass.",
+              "Delrin cools quickly — faster scan speeds help prevent heat distortion.",
             ]
           }
         }
@@ -735,50 +759,51 @@ const DB = {
     }
   },
 
-  // ── PAPER & CARDBOARD ──────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PAPER & CARDBOARD  →  15W Diode Laser (455 nm)
+  // ─────────────────────────────────────────────────────────────────────────────
   paper:{
     label:"Paper & Cardboard",
     materials:{
+
       cardstock:{
         label:"Cardstock / Heavy Paper",
         ops:{
-          engrave:{
-            laser:"ir",
-            why:"The IR diode at low power scores or lightly engraves cardstock without cutting through. Great for score-fold lines and decorative textures.",
-            power:22, speed:300, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:false,
+          score:{
+            laser:"diode",
+            why:"Very low power scores fold lines into cardstock without cutting through — perfect for packaging, cards, and origami.",
+            power:12, speed:500, lpi:null, passes:1, focus:0, airAssist:false,
             tips:[
-              "Very low power — paper ignites easily.",
-              "For scoring fold lines: 10–15% power, 400 mm/s.",
-              "Never leave the machine unattended when cutting paper.",
+              "Keep power as low as possible — paper ignites easily.",
+              "For greeting cards: 8–10% power, 600 mm/s for a barely-visible score line.",
+              "Never leave the machine unattended when working with paper.",
             ]
           },
           cut:{
-            laser:"ir",
-            why:"Paper cuts effortlessly with the IR diode. Precision cuts for cards, stencils, invitations, and packaging.",
-            power:55, speed:150, freq:null, lpi:null, passes:1, focus:0,
-            airAssist:false,
-            warn:"Paper is highly flammable. Do not leave unattended. Keep power as low as possible to achieve a clean cut.",
+            laser:"diode",
+            why:"The 15W diode cuts cardstock effortlessly — great for intricate designs, stencils, invitations, and packaging.",
+            power:40, speed:250, lpi:null, passes:1, focus:0, airAssist:false,
+            warn:"Paper is highly flammable. Never leave the machine unattended when cutting paper.",
             tips:[
-              "Tape paper flat — edges lifting mid-cut will cause mis-registration.",
-              "For intricate cuts (lace patterns), reduce speed further to 80–100 mm/s.",
-              "Multiple sheets can be stacked and cut together — add 1 pass per additional sheet.",
+              "Tape paper flat on all edges — lifting mid-cut causes misregistration.",
+              "For lace or filigree patterns, slow to 100–120 mm/s for clean corners.",
+              "Multiple sheets: stack and tape, add 1 pass per additional sheet.",
             ]
           }
         }
       },
+
       cardboard:{
         label:"Corrugated Cardboard",
         ops:{
           cut:{
-            laser:"ir",
-            why:"The IR diode cuts through cardboard efficiently for packaging, prototyping, and model making.",
-            power:80, speed:100, freq:null, lpi:null, passes:1, focus:0,
-            airAssist:false,
-            warn:"Cardboard is highly flammable — especially corrugated. Never leave unattended. Keep a fire extinguisher nearby.",
+            laser:"diode",
+            why:"The 15W diode cuts corrugated cardboard cleanly for packaging prototypes, box templates, and display fixtures.",
+            power:70, speed:120, lpi:null, passes:1, focus:0, airAssist:false,
+            warn:"Corrugated cardboard is highly flammable. Do not leave unattended. Keep a fire extinguisher accessible.",
             tips:[
-              "Single-wall: 1 pass. Double-wall: 2 passes at 90% power.",
-              "Remove the honeycomb pattern from corrugated cardboard before cutting if accuracy is critical.",
+              "Single-wall: 1 pass. Double-wall: 2 passes at 80% power.",
+              "Cut slightly wider kerf lines to account for cardboard compression.",
             ]
           }
         }
@@ -786,55 +811,59 @@ const DB = {
     }
   },
 
-  // ── STONE, SLATE & CERAMIC ─────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STONE, SLATE & CERAMIC
+  // ─────────────────────────────────────────────────────────────────────────────
   stone:{
     label:"Stone, Slate & Ceramic",
     materials:{
+
       slate:{
         label:"Slate",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"The IR diode ablates the dark slate surface to reveal a lighter grey beneath. Slate is one of the best materials for diode engraving — high contrast and very durable.",
-            power:80, speed:150, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"The 15W blue diode ablates the dark slate surface to reveal a lighter grey underneath — natural high contrast with no coatings needed. One of the best materials for diode engraving.",
+            power:65, speed:200, lpi:300, passes:1, focus:0, airAssist:true,
             tips:[
-              "Clean slate with water before engraving — dust reduces contrast.",
-              "The lighter the revealed colour, the better — look for dark grey/black slate.",
-              "After engraving, wipe with a damp cloth and apply slate oil for a premium finish.",
-              "Coasters and cheese boards are ideal slate laser products.",
+              "Wipe slate clean with water before engraving — dust reduces contrast.",
+              "After engraving, wipe with a damp cloth and apply slate oil or olive oil for a premium finish.",
+              "Darker grey/black slate produces better contrast than brown or pale slate.",
+              "Slate coasters and cheese boards are ideal — flat, uniform, and look stunning engraved.",
             ]
           }
         }
       },
+
       granite:{
         label:"Granite / Marble",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"The IR diode causes micro-fractures in the stone surface, producing a white frosted mark. Requires higher power and slower speed due to stone hardness.",
-            power:90, speed:100, freq:null, lpi:300, passes:2, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"The 15W diode causes micro-fractures in the polished stone surface, producing a frosted white mark. Granite's hardness requires high power and slow speed.",
+            power:80, speed:120, lpi:300, passes:2, focus:0, airAssist:true,
             tips:[
-              "Apply black paint or Cermark spray first for a cleaner, more contrasted result on light granite.",
-              "Natural stone varies enormously — always test on a spare piece.",
-              "2 passes give a deeper, more durable mark.",
+              "Apply flat black spray paint first, engrave through it, then wash off — this technique ('Norton White Tile' method) gives cleaner contrast on light granite.",
+              "Natural stone varies enormously in composition — always test a corner.",
+              "Two passes give a deeper, more durable frosted mark.",
+              "Polished granite marks better than honed (matte) surfaces.",
             ]
           }
         }
       },
+
       ceramic_tile:{
         label:"Ceramic Tile / Porcelain",
         ops:{
           mark:{
-            laser:"fiber",
-            why:"The fiber laser frosts the glazed tile surface, creating a permanent white mark on the glaze. The diode can also work but the fiber laser's precision gives sharper edges on hard surfaces.",
-            power:50, speed:500, freq:30, lpi:400, passes:1, focus:0,
-            airAssist:false,
+            laser:"ir",
+            why:"The 5W IR laser frosts the glazed tile surface with a permanent white mark. For the most durable result, Cermark or flat black paint methods work best with the IR wavelength.",
+            power:65, speed:150, lpi:400, passes:1, focus:0, airAssist:false,
             tips:[
-              "Apply flat black spray paint to the tile, engrave through it, then remove the paint with water — this technique (Norton White Tile method) produces excellent contrast.",
-              "Alternatively, apply Cermark or Laser Bond for a permanent fused mark.",
-              "White tiles give the best contrast; dark tiles may need the paint method.",
+              "Norton White Tile method: spray flat white or black paint on the tile, engrave through it, wipe — this produces an excellent permanent black mark absorbed by the glaze.",
+              "Alternatively, apply Cermark spray for a professionally fused ceramic mark.",
+              "White glazed tiles give the best contrast with either method.",
+              "Unglazed or matte tile: direct IR marking works without coatings.",
             ]
           }
         }
@@ -842,95 +871,96 @@ const DB = {
     }
   },
 
-  // ── OTHER ──────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // OTHER
+  // ─────────────────────────────────────────────────────────────────────────────
   other:{
     label:"Other Materials",
     materials:{
+
       rubber_stamp:{
         label:"Rubber / Stamp Material",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Laser rubber (photopolymer stamp material) is specifically designed for IR diode engraving. The diode ablates the non-image areas to leave raised stamp elements.",
-            power:70, speed:120, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:true,
-            warn:"Natural rubber fumes are strongly irritating. Synthetic laser stamp material is safer — use fume extraction regardless.",
+            laser:"diode",
+            why:"Laser stamp rubber is designed to absorb blue diode light. The 15W diode ablates the non-image areas away cleanly, leaving raised stamp elements ready to ink.",
+            power:55, speed:200, lpi:300, passes:1, focus:0, airAssist:true,
+            warn:"Rubber fumes are strongly irritating. Always use fume extraction.",
             tips:[
-              "Use genuine laser-safe stamp rubber — regular rubber eraser material behaves unpredictably.",
-              "Invert your design (white on black) before sending — the raised areas are what get inked.",
-              "Higher LPI (400+) gives finer detail on intricate stamps.",
-              "Clean the engraved stamp with dish soap and a soft brush to remove residue.",
+              "Use genuine laser-safe stamp rubber — regular erasers behave unpredictably.",
+              "Invert your design (white on black) before sending — the raised (unburned) areas get inked.",
+              "Raise LPI to 400–500 for intricate, fine-detail stamps.",
+              "Clean the finished stamp with dish soap and a soft brush to remove residue.",
             ]
           }
         }
       },
+
       cork:{
         label:"Cork",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"Cork is a natural organic material that the IR diode engraves cleanly. Popular for coasters and wall tiles.",
-            power:48, speed:200, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"Cork is a natural organic material that the 15W blue diode engraves cleanly with warm brown marks on the pale surface. Popular for coasters, trivets, and wall tiles.",
+            power:35, speed:350, lpi:254, passes:1, focus:0, airAssist:true,
             tips:[
-              "Cork is very low density — keep power moderate to avoid burning through.",
-              "Natural cork engrave colour is a warm brown-black.",
-              "Pin down cork sheet; it can shift due to its light weight.",
+              "Cork is low density — keep power moderate to avoid burning straight through.",
+              "Engraved colour is warm golden-brown, great for natural / organic branding.",
+              "Tape or weight cork sheet flat — it's light and can shift easily.",
             ]
           },
           cut:{
-            laser:"ir",
-            why:"Cork cuts easily with the IR diode. Clean edges for decorative shapes and coaster sets.",
-            power:75, speed:100, freq:null, lpi:null, passes:1, focus:0,
-            airAssist:true,
+            laser:"diode",
+            why:"The 15W diode cuts cork cleanly for decorative shapes, coaster sets, and gaskets.",
+            power:65, speed:150, lpi:null, passes:1, focus:0, airAssist:true,
             tips:[
-              "Thick cork (6–10 mm) may need 2–3 passes.",
-              "Cut speed can be increased if you're seeing fraying edges.",
+              "Thick cork (6–10 mm) may need 2–3 passes at 75% power.",
+              "Increase speed if you see fray or burn marks on cut edges.",
             ]
           }
         }
       },
+
       felt:{
         label:"Felt (Wool or Acrylic)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"The IR diode engraves and cuts felt cleanly. The beam seals the cut edges of synthetic felt, preventing fraying.",
-            power:38, speed:220, freq:null, lpi:254, passes:1, focus:0,
-            airAssist:false,
+            laser:"diode",
+            why:"The 15W diode engraves felt at low power — removing the surface fibres cleanly. Synthetic felt cut edges are heat-sealed by the beam, preventing any fraying.",
+            power:25, speed:350, lpi:254, passes:1, focus:0, airAssist:false,
             warn:"Acrylic felt produces plastic fumes — use fume extraction. Wool felt is safer but still requires ventilation.",
             tips:[
-              "Wool felt: can increase power to 50% for deeper engraves.",
-              "Acrylic felt: keep power low — it melts rather than burns.",
-              "The sealed edge from laser cutting is a feature on acrylic felt — no fraying.",
+              "Wool felt: raise power to 35–40% for a deeper engraved texture.",
+              "Acrylic felt: keep power low — it melts and fuses rather than cleanly burning.",
+              "The sealed edge on acrylic felt is a design feature — professional finish, no fraying.",
             ]
           },
           cut:{
-            laser:"ir",
-            why:"Laser-cut felt edges are sealed and clean — far better than scissors or die-cutting for complex shapes.",
-            power:60, speed:130, freq:null, lpi:null, passes:1, focus:0,
-            airAssist:false,
+            laser:"diode",
+            why:"Laser-cut felt produces perfectly sealed edges — far cleaner than scissors or die-cutting for complex shapes.",
+            power:50, speed:200, lpi:null, passes:1, focus:0, airAssist:false,
             tips:[
-              "Use masking tape to hold thin felt flat during cutting.",
-              "Complex designs: reduce speed to 80–90 mm/s for precision.",
+              "Use masking tape to hold thin felt completely flat during cutting.",
+              "Complex designs: reduce speed to 100 mm/s for accurate corners.",
             ]
           }
         }
       },
+
       glass:{
         label:"Glass (Standard Float)",
         ops:{
           engrave:{
-            laser:"ir",
-            why:"The IR diode causes micro-fractures in the glass surface producing a frosted appearance. Glass is challenging — results vary with glass composition.",
-            power:65, speed:200, freq:null, lpi:300, passes:1, focus:0,
-            airAssist:false,
+            laser:"diode",
+            why:"The 15W diode causes micro-fractures in the glass surface, producing a frosted appearance. Results vary with glass type and thickness — test first.",
+            power:55, speed:200, lpi:300, passes:1, focus:0, airAssist:false,
+            warn:"Tempered / toughened glass will shatter when laser-engraved — do not attempt. Only use standard float or annealed glass.",
             tips:[
-              "Apply dish soap or hand lotion to the glass surface — it absorbs heat and reduces fracture cracking.",
-              "Use newspaper as a wet backing (soak it, lay on glass) for smoother frosting.",
+              "Apply a thin layer of dish soap or hand lotion to the glass surface — it absorbs heat and produces smoother frosting.",
+              "Wet newspaper laid on the glass also works well as a heat sink.",
               "Reduce LPI to 200 for less aggressive chipping on thin glass.",
-              "Curved glass (glasses, bottles) requires a rotary attachment for even focus.",
-              "Tempered glass is not suitable — it will shatter.",
+              "Curved items (glasses, bottles) require a rotary attachment — without it, focus is inconsistent.",
+              "Higher LPI produces finer, more even frosting on flat glass.",
             ]
           }
         }
@@ -939,148 +969,141 @@ const DB = {
   }
 };
 
-// ─── DISPLAY CONFIG ────────────────────────────────────────────────────────────
-const PARAM_DEFS = [
-  { key:"power",   label:"Power",      unit:"%",    fmt: v => v },
-  { key:"speed",   label:"Speed",      unit:"mm/s", fmt: v => v },
-  { key:"freq",    label:"Frequency",  unit:"kHz",  fmt: v => v, fiberOnly:true },
-  { key:"lpi",     label:"LPI",        unit:"ln/in",fmt: v => v },
-  { key:"passes",  label:"Passes",     unit:"×",    fmt: v => v },
-  { key:"focus",   label:"Focus Offset",unit:"mm",  fmt: v => (v === 0 ? "0 (surface)" : (v > 0 ? "+"+v : v)) },
-  { key:"airAssist",label:"Air Assist",unit:"",     fmt: v => v ? "ON" : "OFF" },
+// ─── PARAMS TO SHOW ────────────────────────────────────────────────────────────
+const PARAMS = [
+  { key:"power",     label:"Power",       unit:"%"    },
+  { key:"speed",     label:"Speed",       unit:"mm/s" },
+  { key:"lpi",       label:"LPI",         unit:"ln/in"},
+  { key:"passes",    label:"Passes",      unit:"×"    },
+  { key:"focus",     label:"Focus Offset",unit:"mm"   },
+  { key:"airAssist", label:"Air Assist",  unit:""     },
 ];
 
-// ─── DOM REFS ──────────────────────────────────────────────────────────────────
-const selCat   = document.getElementById("sel-cat");
-const selMat   = document.getElementById("sel-mat");
-const selOp    = document.getElementById("sel-op");
-const panel    = document.getElementById("settings-panel");
-const pholder  = document.getElementById("placeholder");
-const recBox   = document.getElementById("laser-rec-box");
-const gridBox  = document.getElementById("settings-grid");
-const alertBox = document.getElementById("alert-box");
-const tipsBox  = document.getElementById("tips-box");
+// ─── DOM ───────────────────────────────────────────────────────────────────────
+const selCat  = document.getElementById("sel-cat");
+const selMat  = document.getElementById("sel-mat");
+const selOp   = document.getElementById("sel-op");
+const panel   = document.getElementById("settings-panel");
+const pholder = document.getElementById("placeholder");
+const recBox  = document.getElementById("laser-rec-box");
+const gridBox = document.getElementById("settings-grid");
+const alertBox= document.getElementById("alert-box");
+const tipsBox = document.getElementById("tips-box");
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────────
-function buildOption(val, label, disabled=false){
+function opt(val, label, disabled){
   const o = document.createElement("option");
-  o.value = val;
-  o.textContent = label;
+  o.value = val; o.textContent = label;
   if(disabled) o.disabled = true;
   return o;
 }
+const opLabels = {
+  engrave:"Engrave", cut:"Cut", mark:"Mark", score:"Score (fold lines)",
+  black_mark:"Black Mark / Anneal", color_anneal:"Colour Annealing",
+  cut_3mm:"Cut — 3 mm", cut_4mm:"Cut — 4 mm"
+};
+const opLabel = k => opLabels[k] || k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
 
-function opLabel(key){
-  const map = {
-    engrave:"Engrave",cut:"Cut",mark:"Mark",
-    black_mark:"Black Mark / Anneal",color_anneal:"Colour Annealing",
-    cut_3mm:"Cut (3 mm)",cut_4mm:"Cut (4 mm)"
-  };
-  return map[key] || key.charAt(0).toUpperCase()+key.slice(1).replace(/_/g," ");
-}
-
-// ─── EVENT HANDLERS ────────────────────────────────────────────────────────────
-selCat.addEventListener("change", ()=>{
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
+selCat.addEventListener("change", () => {
   const cat = selCat.value;
-  selMat.innerHTML = "";
-  selMat.appendChild(buildOption("","— Select material —",true));
-  selOp.innerHTML  = "";
-  selOp.appendChild(buildOption("","— Select operation —",true));
-  selMat.disabled  = !cat;
-  selOp.disabled   = true;
-  hideSettings();
-
+  selMat.innerHTML = ""; selMat.appendChild(opt("","— Select material —",true));
+  selOp.innerHTML  = ""; selOp.appendChild(opt("","— Select operation —",true));
+  selMat.disabled  = !cat; selOp.disabled = true;
+  hide();
   if(!cat) return;
-  const mats = DB[cat].materials;
-  Object.entries(mats).forEach(([k,v])=> selMat.appendChild(buildOption(k, v.label)));
+  Object.entries(DB[cat].materials).forEach(([k,v]) => selMat.appendChild(opt(k, v.label)));
 });
 
-selMat.addEventListener("change", ()=>{
-  const cat = selCat.value, mat = selMat.value;
-  selOp.innerHTML = "";
-  selOp.appendChild(buildOption("","— Select operation —",true));
-  selOp.disabled = !mat;
-  hideSettings();
-
+selMat.addEventListener("change", () => {
+  const [cat, mat] = [selCat.value, selMat.value];
+  selOp.innerHTML = ""; selOp.appendChild(opt("","— Select operation —",true));
+  selOp.disabled = !mat; hide();
   if(!mat) return;
-  const ops = DB[cat].materials[mat].ops;
-  Object.entries(ops).forEach(([k])=> selOp.appendChild(buildOption(k, opLabel(k))));
+  Object.keys(DB[cat].materials[mat].ops).forEach(k => selOp.appendChild(opt(k, opLabel(k))));
 });
 
-selOp.addEventListener("change", ()=>{
-  const cat = selCat.value, mat = selMat.value, op = selOp.value;
-  if(!op){ hideSettings(); return; }
-  showSettings(DB[cat].materials[mat].ops[op]);
+selOp.addEventListener("change", () => {
+  const [cat, mat, op] = [selCat.value, selMat.value, selOp.value];
+  if(!op){ hide(); return; }
+  render(DB[cat].materials[mat].ops[op]);
 });
 
 // ─── RENDER ────────────────────────────────────────────────────────────────────
-function hideSettings(){
+function hide(){
   panel.classList.remove("visible");
   pholder.style.display = "block";
 }
 
-function showSettings(cfg){
+function render(cfg){
   pholder.style.display = "none";
   panel.classList.add("visible");
 
-  // Laser recommendation card
-  const isFiber = cfg.laser === "fiber";
-  const laserName = isFiber ? "Fiber Laser — 20 W · 1064 nm" : "IR Diode Laser — 2 W · 1064 nm";
+  const isDiode = cfg.laser === "diode";
+  const laserName = isDiode
+    ? "15 W Diode Laser — 455 nm (Blue)"
+    : "5 W IR Laser — 1064 nm (Infrared)";
+  const useMsg = isDiode
+    ? "Use the 15 W Diode Laser (455 nm blue) for this material"
+    : "Use the 5 W IR Laser (1064 nm infrared) for this material";
+
   recBox.innerHTML = `
     <div class="laser-rec ${cfg.laser}">
-      <div class="laser-badge">${isFiber ? "🔶" : "🔷"} ${laserName}</div>
-      <h3>${isFiber ? "Use the Fiber Laser for this material" : "Use the IR Diode Laser for this material"}</h3>
+      <div class="laser-badge">${isDiode ? "🔵" : "🟠"} ${laserName}</div>
+      <h3>${useMsg}</h3>
       <p>${cfg.why}</p>
     </div>`;
 
-  // Settings grid
+  // Stats grid
   gridBox.innerHTML = "";
-  PARAM_DEFS.forEach(def=>{
-    if(def.fiberOnly && !isFiber) return;
-    const raw = cfg[def.key];
-    const card = document.createElement("div");
-    card.className = "stat-card";
-    if(raw === null || raw === undefined){
-      card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-na">N/A</div>`;
-    } else if(def.key === "speedRange" && cfg.speedRange){
-      card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-value" style="font-size:1rem">${cfg.speedRange}</div><div class="stat-unit">mm/s</div>`;
-    } else if(def.key === "airAssist"){
-      const color = raw ? "#4caf50" : "var(--muted)";
-      card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-value" style="font-size:1.1rem;color:${color}">${def.fmt(raw)}</div>`;
-    } else if(def.key === "focus"){
-      card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-value" style="font-size:1rem">${def.fmt(raw)}</div>`;
-    } else {
-      card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-value">${def.fmt(raw)}</div><div class="stat-unit">${def.unit}</div>`;
-    }
-    gridBox.appendChild(card);
-  });
 
-  // Speed range override card (titanium colour)
-  if(cfg.speedRange){
-    const existing = gridBox.querySelector("[data-speed]");
-    if(existing) existing.remove();
-    const card = document.createElement("div");
-    card.className = "stat-card";
-    card.innerHTML = `<div class="stat-label">Speed</div><div class="stat-value" style="font-size:1.05rem">${cfg.speedRange}</div><div class="stat-unit">mm/s</div>`;
-    // Insert after power card
-    const first = gridBox.firstChild;
-    if(first) gridBox.insertBefore(card, first.nextSibling);
+  // If colour annealing (power/speed are variable), show note cards
+  if(cfg.speedNote || cfg.powerNote){
+    const pc = document.createElement("div");
+    pc.className = "stat-card";
+    pc.innerHTML = `<div class="stat-label">Power</div><div class="stat-value" style="font-size:.95rem">${cfg.powerNote || "Variable"}</div>`;
+    gridBox.appendChild(pc);
+
+    const sc = document.createElement("div");
+    sc.className = "stat-card";
+    sc.innerHTML = `<div class="stat-label">Speed</div><div class="stat-value" style="font-size:.95rem">${cfg.speedNote || "Variable"}</div>`;
+    gridBox.appendChild(sc);
+
+    // remaining params except power + speed
+    PARAMS.filter(p => p.key !== "power" && p.key !== "speed").forEach(def => addStatCard(def, cfg));
+  } else {
+    PARAMS.forEach(def => addStatCard(def, cfg));
   }
 
-  // Alert box
+  // Alerts
   alertBox.innerHTML = "";
-  if(cfg.danger){
-    alertBox.innerHTML += `<div class="alert danger"><span class="alert-icon">⛔</span><span>${cfg.danger}</span></div>`;
-  }
-  if(cfg.warn){
-    alertBox.innerHTML += `<div class="alert warn"><span class="alert-icon">⚠️</span><span>${cfg.warn}</span></div>`;
-  }
+  if(cfg.danger) alertBox.innerHTML += `<div class="alert danger"><span class="alert-icon">⛔</span><span>${cfg.danger}</span></div>`;
+  if(cfg.warn)   alertBox.innerHTML += `<div class="alert warn"><span class="alert-icon">⚠️</span><span>${cfg.warn}</span></div>`;
 
   // Tips
   const tips = cfg.tips || [];
   tipsBox.innerHTML = `<h3>Tips &amp; Tricks</h3><ul class="tips-list">${
-    tips.map(t=>`<li><span class="tip-icon">✦</span><span>${t}</span></li>`).join("")
+    tips.map(t => `<li><span class="tip-icon">✦</span><span>${t}</span></li>`).join("")
   }</ul>`;
+}
+
+function addStatCard(def, cfg){
+  const raw = cfg[def.key];
+  const card = document.createElement("div");
+  card.className = "stat-card";
+
+  if(raw === null || raw === undefined){
+    card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-na">N/A</div>`;
+  } else if(def.key === "airAssist"){
+    const color = raw ? "#4caf50" : "var(--muted)";
+    card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-value" style="font-size:1.05rem;color:${color}">${raw ? "ON" : "OFF"}</div>`;
+  } else if(def.key === "focus"){
+    const display = raw === 0 ? "0 (surface)" : (raw > 0 ? `+${raw}` : raw);
+    card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-value" style="font-size:1rem">${display}</div><div class="stat-unit">mm</div>`;
+  } else {
+    card.innerHTML = `<div class="stat-label">${def.label}</div><div class="stat-value">${raw}</div><div class="stat-unit">${def.unit}</div>`;
+  }
+  gridBox.appendChild(card);
 }
 </script>
 </body>
