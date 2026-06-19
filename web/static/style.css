@@ -1,4 +1,4 @@
-/* Web Gecko Social Post Manager — styles */
+/* Web Gecko Social Post Manager */
 
 :root {
   --bg: #0e1a14;
@@ -11,6 +11,7 @@
   --border: #2a3d2e;
   --pending: #f0a500;
   --approved: #00c88c;
+  --posted: #3a9ad9;
   --rejected: #e05050;
   --radius: 10px;
   --font: 'Segoe UI', system-ui, sans-serif;
@@ -26,6 +27,34 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* ── Login ────────────────────────────────────────────────────────────── */
+body.login-page {
+  align-items: center;
+  justify-content: center;
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+}
+.login-card input[type="text"],
+.login-card input[type="password"] {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: .95rem;
+  padding: .6rem .8rem;
+  margin-bottom: .3rem;
+}
+.login-card input:focus { outline: none; border-color: var(--accent); }
 
 /* ── Header ───────────────────────────────────────────────────────────── */
 header {
@@ -45,8 +74,25 @@ header {
 .gecko { font-size: 1.8rem; }
 .biz-name { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
 .sub { font-size: .85rem; color: var(--muted); }
+nav { display: flex; gap: 1.5rem; align-items: center; }
 nav a { color: var(--text); text-decoration: none; font-size: .9rem; }
 nav a:hover { color: var(--accent); }
+.nav-logout { color: var(--muted) !important; font-size: .8rem !important; }
+
+/* ── Flash messages ───────────────────────────────────────────────────── */
+.flash-bar { padding: .5rem 2rem; }
+.alert {
+  padding: .6rem 1rem;
+  border-radius: 6px;
+  font-size: .88rem;
+  margin: .3rem 0;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.alert-success { background: #0d3d28; border-left: 3px solid var(--accent); }
+.alert-warning  { background: #3d2e00; border-left: 3px solid var(--pending); }
+.alert-error    { background: #3d1010; border-left: 3px solid var(--rejected); }
 
 /* ── Main ─────────────────────────────────────────────────────────────── */
 main {
@@ -84,6 +130,7 @@ footer {
 }
 .badge-pending  { background: var(--pending); color: #000; }
 .badge-approved { background: var(--approved); color: #000; }
+.badge-posted   { background: var(--posted); color: #fff; }
 .badge-rejected { background: var(--rejected); color: #fff; }
 
 /* ── Post grid ────────────────────────────────────────────────────────── */
@@ -104,22 +151,15 @@ footer {
 
 .post-card.status-pending  { border-left: 4px solid var(--pending); }
 .post-card.status-approved { border-left: 4px solid var(--approved); }
+.post-card.status-posted   { border-left: 4px solid var(--posted); }
 .post-card.status-rejected { border-left: 4px solid var(--rejected); opacity: .7; }
 
-.card-thumb {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  display: block;
-}
-
+.card-thumb { width: 100%; height: 180px; object-fit: cover; display: block; }
 .card-body { padding: 1rem; }
 .card-subject { font-weight: 600; margin-bottom: .3rem; font-size: .95rem; }
 .card-from { font-size: .8rem; color: var(--muted); margin-bottom: .5rem; }
 .card-preview { font-size: .85rem; color: var(--muted); margin-bottom: .5rem; line-height: 1.5; }
 .card-tags { font-size: .78rem; color: var(--accent-dark); margin-bottom: .8rem; }
-.card-approved-at { font-size: .78rem; color: var(--muted); margin-bottom: .6rem; }
-
 .card-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 
 /* ── Buttons ──────────────────────────────────────────────────────────── */
@@ -136,7 +176,6 @@ footer {
 }
 .btn:hover { opacity: .85; transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
-
 .btn-view    { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-approve { background: var(--approved); color: #000; }
 .btn-reject  { background: var(--rejected); color: #fff; }
@@ -145,12 +184,7 @@ footer {
 .btn-big     { padding: .6rem 1.4rem; font-size: 1rem; }
 .btn[disabled] { opacity: .4; cursor: not-allowed; transform: none; }
 
-/* ── Empty state ──────────────────────────────────────────────────────── */
-.empty-state {
-  color: var(--muted);
-  font-style: italic;
-  padding: 1rem 0;
-}
+.empty-state { color: var(--muted); font-style: italic; padding: 1rem 0; }
 
 /* ── Detail layout ────────────────────────────────────────────────────── */
 .detail-layout {
@@ -159,9 +193,7 @@ footer {
   gap: 2rem;
   align-items: start;
 }
-@media (max-width: 768px) {
-  .detail-layout { grid-template-columns: 1fr; }
-}
+@media (max-width: 768px) { .detail-layout { grid-template-columns: 1fr; } }
 
 .detail-image .full-image {
   width: 100%;
@@ -177,6 +209,55 @@ footer {
   text-align: center;
   color: var(--muted);
 }
+
+/* ── Post results box ─────────────────────────────────────────────────── */
+.results-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+.results-box h4 { color: var(--accent); margin-bottom: .75rem; font-size: .9rem; }
+.result-row {
+  display: flex;
+  flex-direction: column;
+  padding: .4rem .6rem;
+  border-radius: 5px;
+  margin-bottom: .4rem;
+  font-size: .82rem;
+}
+.result-ok   { background: #0d3d28; }
+.result-fail { background: #3d1010; }
+.platform-name { font-weight: 700; text-transform: capitalize; }
+.result-status { color: var(--muted); }
+.result-id { font-family: monospace; font-size: .75rem; color: var(--muted); word-break: break-all; }
+
+/* ── Platform checkboxes ──────────────────────────────────────────────── */
+.platform-grid {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.platform-check {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .4rem .8rem;
+  cursor: pointer;
+  font-size: .88rem;
+  user-select: none;
+  transition: border-color .15s;
+}
+.platform-check:hover { border-color: var(--accent-dark); }
+.platform-check.checked,
+.platform-check input:checked ~ * { color: var(--text); }
+.platform-check input[type="checkbox"] { accent-color: var(--accent); }
+.platform-icon { font-size: 1.1rem; }
 
 /* ── Form ─────────────────────────────────────────────────────────────── */
 .detail-content h3 { margin: 1.2rem 0 .5rem; color: var(--accent); font-size: 1rem; }
@@ -223,18 +304,14 @@ textarea:focus { outline: none; border-color: var(--accent); }
 }
 
 .referral-box {
-  margin: 1rem 0;
+  margin: .5rem 0 1rem;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: .7rem 1rem;
-  font-size: .88rem;
+  padding: .6rem 1rem;
+  font-size: .85rem;
 }
-.referral-box code {
-  color: var(--accent);
-  word-break: break-all;
-}
-
+.referral-box code { color: var(--accent); word-break: break-all; }
 .form-actions { margin-top: .8rem; }
 
 .approve-row {
@@ -242,6 +319,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
   gap: 1rem;
   margin-top: 1.5rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .status-chip {
@@ -254,4 +332,5 @@ textarea:focus { outline: none; border-color: var(--accent); }
 }
 .status-pending  { background: var(--pending); color: #000; }
 .status-approved { background: var(--approved); color: #000; }
+.status-posted   { background: var(--posted); color: #fff; }
 .status-rejected { background: var(--rejected); color: #fff; }

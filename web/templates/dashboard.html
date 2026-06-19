@@ -4,13 +4,12 @@
 {% block content %}
 <div class="page-header">
   <h1>Post Dashboard</h1>
-  <p class="subtitle">Review emails that triggered the <code>[WGPOST]</code> automation.</p>
+  <p class="subtitle">Emails with <code>[WGPOST]</code> in the subject appear here for review.</p>
 </div>
 
-<!-- ── PENDING ─────────────────────────────────────────────────────────── -->
+<!-- ── PENDING ──────────────────────────────────────────────────────────── -->
 <section class="section">
   <h2><span class="badge badge-pending">{{ pending|length }}</span> Pending Approval</h2>
-
   {% if pending %}
   <div class="post-grid">
     {% for post in pending %}
@@ -28,13 +27,7 @@
         <p class="card-preview">{{ post['generated_text'][:140] }}…</p>
         <p class="card-tags">{{ post['hashtags'][:80] }}</p>
         <div class="card-actions">
-          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View / Edit</a>
-          <form method="post" action="{{ url_for('approve', post_id=post['id']) }}" style="display:inline">
-            <button class="btn btn-approve" type="submit">✓ Approve</button>
-          </form>
-          <form method="post" action="{{ url_for('reject', post_id=post['id']) }}" style="display:inline">
-            <button class="btn btn-reject" type="submit">✗ Reject</button>
-          </form>
+          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">Review →</a>
         </div>
       </div>
     </div>
@@ -45,10 +38,9 @@
   {% endif %}
 </section>
 
-<!-- ── APPROVED ───────────────────────────────────────────────────────── -->
+<!-- ── APPROVED (ready to post) ─────────────────────────────────────────── -->
 <section class="section">
-  <h2><span class="badge badge-approved">{{ approved|length }}</span> Approved</h2>
-
+  <h2><span class="badge badge-approved">{{ approved|length }}</span> Approved — Ready to Post</h2>
   {% if approved %}
   <div class="post-grid">
     {% for post in approved %}
@@ -63,12 +55,12 @@
       <div class="card-body">
         <p class="card-subject">{{ post['email_subject'] }}</p>
         <p class="card-preview">{{ post['generated_text'][:140] }}…</p>
-        <p class="card-approved-at">Approved {{ post['approved_at'] }}</p>
+        <p class="card-tags">{{ (post['platforms'] or '').replace(',', ' · ') }}</p>
         <div class="card-actions">
-          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View</a>
-          <button class="btn btn-post" disabled title="Coming soon — social posting not yet wired up">
-            📤 Post to Social (coming soon)
-          </button>
+          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View →</a>
+          <form method="post" action="{{ url_for('publish', post_id=post['id']) }}" style="display:inline">
+            <button class="btn btn-post" type="submit">📤 Post Now</button>
+          </form>
         </div>
       </div>
     </div>
@@ -79,9 +71,30 @@
   {% endif %}
 </section>
 
-<!-- ── REJECTED ───────────────────────────────────────────────────────── -->
+<!-- ── POSTED ────────────────────────────────────────────────────────────── -->
+{% if posted %}
+<section class="section">
+  <h2><span class="badge badge-posted">{{ posted|length }}</span> Posted</h2>
+  <div class="post-grid">
+    {% for post in posted %}
+    <div class="post-card status-posted">
+      <div class="card-body">
+        <p class="card-subject">{{ post['email_subject'] }}</p>
+        <p class="card-from">Posted {{ post['posted_at'] }}</p>
+        <p class="card-tags">{{ (post['platforms'] or '').replace(',', ' · ') }}</p>
+        <div class="card-actions">
+          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View results →</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ── REJECTED ──────────────────────────────────────────────────────────── -->
 {% if rejected %}
-<section class="section section-collapsed">
+<section class="section">
   <h2><span class="badge badge-rejected">{{ rejected|length }}</span> Rejected</h2>
   <div class="post-grid">
     {% for post in rejected %}
@@ -90,10 +103,7 @@
         <p class="card-subject">{{ post['email_subject'] }}</p>
         <p class="card-from">From: {{ post['email_from'] }}</p>
         <div class="card-actions">
-          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View</a>
-          <form method="post" action="{{ url_for('approve', post_id=post['id']) }}" style="display:inline">
-            <button class="btn btn-approve" type="submit">↩ Re-approve</button>
-          </form>
+          <a class="btn btn-view" href="{{ url_for('post_detail', post_id=post['id']) }}">View →</a>
         </div>
       </div>
     </div>

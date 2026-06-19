@@ -7,23 +7,42 @@
   <h1>Post #{{ post['id'] }}
     <span class="status-chip status-{{ post['status'] }}">{{ post['status'].upper() }}</span>
   </h1>
-  <p class="card-from">From: {{ post['email_from'] }} &nbsp;|&nbsp; {{ post['created_at'] }}</p>
+  <p class="card-from">From: {{ post['email_from'] }}&nbsp;|&nbsp;{{ post['created_at'] }}</p>
 </div>
 
 <div class="detail-layout">
 
-  <!-- Image column -->
+  <!-- ── Image column ──────────────────────────────────────────────────── -->
   <div class="detail-image">
     {% if post['image_path'] %}
     <img src="{{ url_for('serve_image', filename=post['image_path'].split('/')[-1]) }}"
          alt="Post image" class="full-image">
-    <p class="img-note">This image will accompany the post.</p>
+    <p class="img-note">Image attached to this post.</p>
     {% else %}
     <div class="no-image">No image</div>
     {% endif %}
+
+    <!-- Post results (after publishing) -->
+    {% if post_results %}
+    <div class="results-box">
+      <h4>Post Results</h4>
+      {% for platform, result in post_results.items() %}
+      <div class="result-row {% if result.success %}result-ok{% else %}result-fail{% endif %}">
+        <span class="platform-name">{{ platform }}</span>
+        {% if result.success %}
+        <span class="result-status">✓ Posted</span>
+        {% if result.id %}<span class="result-id">ID: {{ result.id }}</span>{% endif %}
+        {% else %}
+        <span class="result-status">✗ Failed</span>
+        <span class="result-id">{{ result.error }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 
-  <!-- Content column -->
+  <!-- ── Content column ───────────────────────────────────────────────── -->
   <div class="detail-content">
 
     <div class="original-email">
@@ -33,8 +52,8 @@
     </div>
 
     <form method="post" action="{{ url_for('edit', post_id=post['id']) }}">
-      <h3>Generated Social Post</h3>
-      <p class="field-hint">Edit below before approving.</p>
+      <h3>Generated Post</h3>
+      <p class="field-hint">Edit before approving. Changes are saved separately from approval.</p>
 
       <label for="generated_text">Post Copy</label>
       <textarea id="generated_text" name="generated_text" rows="8">{{ post['generated_text'] }}</textarea>
@@ -42,35 +61,62 @@
       <label for="hashtags">Hashtags</label>
       <textarea id="hashtags" name="hashtags" rows="2">{{ post['hashtags'] }}</textarea>
 
-      <label for="notes">Internal Notes (not posted)</label>
-      <textarea id="notes" name="notes" rows="2">{{ post['notes'] or '' }}</textarea>
-
       <div class="referral-box">
-        <strong>Referral link:</strong>
+        <strong>Referral link (auto-appended):</strong>
         <code>{{ post['referral_link'] }}</code>
       </div>
+
+      <label>Post to Platforms</label>
+      <div class="platform-grid">
+        {% for platform in all_platforms %}
+        <label class="platform-check {% if platform in selected_platforms %}checked{% endif %}">
+          <input type="checkbox" name="platforms" value="{{ platform }}"
+                 {% if platform in selected_platforms %}checked{% endif %}>
+          <span class="platform-icon">
+            {% if platform == 'facebook' %}📘{% elif platform == 'instagram' %}📸
+            {% elif platform == 'tiktok' %}🎵{% elif platform == 'x' %}𝕏{% endif %}
+          </span>
+          {{ platform | capitalize }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <label for="notes">Internal Notes (not posted)</label>
+      <textarea id="notes" name="notes" rows="2">{{ post['notes'] or '' }}</textarea>
 
       <div class="form-actions">
         <button class="btn btn-save" type="submit">💾 Save Changes</button>
       </div>
     </form>
 
+    <!-- Approve / Reject / Publish actions -->
     <div class="approve-row">
-      {% if post['status'] != 'approved' %}
+      {% if post['status'] == 'pending' %}
       <form method="post" action="{{ url_for('approve', post_id=post['id']) }}">
-        <button class="btn btn-approve btn-big" type="submit">✓ Approve Post</button>
+        <button class="btn btn-approve btn-big" type="submit">✓ Approve</button>
       </form>
-      {% endif %}
-      {% if post['status'] != 'rejected' %}
       <form method="post" action="{{ url_for('reject', post_id=post['id']) }}">
         <button class="btn btn-reject btn-big" type="submit">✗ Reject</button>
       </form>
       {% endif %}
+
       {% if post['status'] == 'approved' %}
-      <button class="btn btn-post btn-big" disabled
-              title="Social media posting coming in a future release">
-        📤 Post to Social (coming soon)
-      </button>
+      <form method="post" action="{{ url_for('publish', post_id=post['id']) }}">
+        <button class="btn btn-post btn-big" type="submit">📤 Post to Social</button>
+      </form>
+      <form method="post" action="{{ url_for('reject', post_id=post['id']) }}">
+        <button class="btn btn-reject btn-big" type="submit">✗ Reject</button>
+      </form>
+      {% endif %}
+
+      {% if post['status'] == 'posted' %}
+      <p style="color:var(--accent);font-weight:600">✓ Published — see results above.</p>
+      {% endif %}
+
+      {% if post['status'] == 'rejected' %}
+      <form method="post" action="{{ url_for('approve', post_id=post['id']) }}">
+        <button class="btn btn-approve btn-big" type="submit">↩ Re-approve</button>
+      </form>
       {% endif %}
     </div>
 

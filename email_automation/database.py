@@ -15,23 +15,26 @@ def init_db():
     with get_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS posts (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                email_from  TEXT,
-                email_subject TEXT,
-                email_body  TEXT,
-                generated_text TEXT,
-                image_path  TEXT,
-                hashtags    TEXT,
-                referral_link TEXT,
-                status      TEXT DEFAULT 'pending',
-                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                approved_at TIMESTAMP,
-                notes       TEXT
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                email_from      TEXT,
+                email_subject   TEXT,
+                email_body      TEXT,
+                generated_text  TEXT,
+                image_path      TEXT,
+                hashtags        TEXT,
+                referral_link   TEXT,
+                platforms       TEXT DEFAULT 'facebook,instagram',
+                status          TEXT DEFAULT 'pending',
+                post_results    TEXT DEFAULT '',
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                approved_at     TIMESTAMP,
+                posted_at       TIMESTAMP,
+                notes           TEXT
             )
         """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS processed_emails (
-                message_id TEXT PRIMARY KEY,
+                message_id   TEXT PRIMARY KEY,
                 processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -86,11 +89,11 @@ def get_posts(status=None):
         return conn.execute("SELECT * FROM posts ORDER BY created_at DESC").fetchall()
 
 
-def update_post(post_id: int, generated_text: str, hashtags: str, notes: str):
+def update_post(post_id: int, generated_text: str, hashtags: str, platforms: str, notes: str):
     with get_db() as conn:
         conn.execute(
-            "UPDATE posts SET generated_text=?, hashtags=?, notes=? WHERE id=?",
-            (generated_text, hashtags, notes, post_id),
+            "UPDATE posts SET generated_text=?, hashtags=?, platforms=?, notes=? WHERE id=?",
+            (generated_text, hashtags, platforms, notes, post_id),
         )
         conn.commit()
 
@@ -101,5 +104,15 @@ def set_status(post_id: int, status: str):
         conn.execute(
             "UPDATE posts SET status=?, approved_at=? WHERE id=?",
             (status, approved_at, post_id),
+        )
+        conn.commit()
+
+
+def set_posted(post_id: int, results: str):
+    """Mark as posted and store JSON results string."""
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE posts SET status='posted', posted_at=?, post_results=? WHERE id=?",
+            (datetime.utcnow(), results, post_id),
         )
         conn.commit()

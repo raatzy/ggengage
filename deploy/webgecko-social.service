@@ -1,0 +1,17 @@
+[Unit]
+Description=Web Gecko Social Post Manager
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/webgecko-social
+ExecStart=/var/www/webgecko-social/venv/bin/python run.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+EnvironmentFile=/var/www/webgecko-social/.env
+
+[Install]
+WantedBy=multi-user.target
